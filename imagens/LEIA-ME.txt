@@ -55,4 +55,4 @@ Caminho:  C:\Users\Josel\Documents\hotel-bege-ouro\img\
   • Tamanho do arquivo: até 800 KB (otimize em tinypng.com
     se ficar muito grande para acelerar o site)
 
-═══════════════════════════════════════════════════════════════
+══════════════════════════════════════════════
