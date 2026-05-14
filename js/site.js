@@ -22,6 +22,8 @@ const IMG = {
   /* Quartos por tipo */
   quartoIndividual:    'img/quarto_individual_1.png',
   quartoIndividual2:   'img/quarto_individual_2.png',
+  quartoIndividualTV:  'img/quarto_individual_tv.png',
+  quartoIndividualBanheiro: 'img/quarto_individual_banheiro.png',
   quartoSolteiroDuplo: 'img/quarto_solteiro.png',   /* FOTO REAL — 2 camas de solteiro */
   quartoStandard:      'img/quarto_solteiro.png',   /* FOTO REAL */
   quartoStandard2:     'img/quarto_solteiro.png',   /* FOTO REAL */
@@ -350,6 +352,11 @@ const SITE = {
 function roomGallery(roomId) {
   const room = (window.DB && DB.room) ? DB.room(roomId) : null;
   const primary = room ? imgForRoom(room) : IMG.quartoSolteiroDuplo;
+  
+  if (room && room.tipo === 'Individual') {
+    return [primary, IMG.quartoIndividualTV, IMG.quartoIndividualBanheiro];
+  }
+  
   return [primary, IMG.banheiroPia];
 }
 
