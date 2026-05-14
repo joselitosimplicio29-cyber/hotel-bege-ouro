@@ -65,9 +65,13 @@
   </div>
 </section>
 
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script src="js/supabase-config.js"></script>
 <script src="js/db.js"></script>
 <script src="js/site.js"></script>
 <script>
+(async function() {
+  await DB.load();
   SITE.init('quartos');
 
   const all = DB.rooms();
@@ -101,6 +105,7 @@
         </div>
       </div>`;
   }).join('');
+})();
 </script>
 </body>
 </html>

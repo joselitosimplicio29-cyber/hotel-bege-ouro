@@ -196,9 +196,13 @@
   </div>
 </section>
 
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script src="js/supabase-config.js"></script>
 <script src="js/db.js"></script>
 <script src="js/site.js"></script>
 <script>
+(async function() {
+await DB.load();
 SITE.init('reservar');
 
 const state = {
@@ -404,40 +408,50 @@ function step4Valid(){
   return true;
 }
 
-function confirmar(){
-  const cli = DB.findOrCreateClient(state.cliente);
-  const room = DB.room(state.quartoId);
-  const valorPago = state.pagamento === 'dinheiro' ? 0 : state.totalFinal;
-  const reserva = {
-    clienteId: cli.id,
-    quartoId: room.id,
-    entrada: state.entrada, saida: state.saida,
-    diarias: state.diarias, hospedes: state.hospedes,
-    valorDiaria: room.preco,
-    valorTotal: state.totalFinal,
-    valorPago: valorPago,
-    valorRestante: state.totalFinal - valorPago,
-    formaPagamento: state.pagamento,
-    statusPagamento: valorPago === state.totalFinal ? 'pago' : 'pendente',
-    statusReserva: valorPago === state.totalFinal ? 'confirmada' : 'pendente',
-    origem: 'online',
-    observacoes: state.cliente.obs,
-  };
-  const created = DB.saveReservation(reserva);
-  if (valorPago > 0) DB.addPayment({ reservaId: created.id, valor: valorPago, forma: state.pagamento });
-  document.getElementById('confirmCode').textContent = created.codigo;
-  show(5);
+async function confirmar(){
+  const btn = document.getElementById('btnNext');
+  btn.textContent = 'Processando...';
+  btn.disabled = true;
+  try {
+    const cli = await DB.findOrCreateClient(state.cliente);
+    const room = DB.room(state.quartoId);
+    const valorPago = state.pagamento === 'dinheiro' ? 0 : state.totalFinal;
+    const reserva = {
+      clienteId: cli.id,
+      quartoId: room.id,
+      entrada: state.entrada, saida: state.saida,
+      diarias: state.diarias, hospedes: state.hospedes,
+      valorDiaria: room.preco,
+      valorTotal: state.totalFinal,
+      valorPago: valorPago,
+      valorRestante: state.totalFinal - valorPago,
+      formaPagamento: state.pagamento,
+      statusPagamento: valorPago === state.totalFinal ? 'pago' : 'pendente',
+      statusReserva: valorPago === state.totalFinal ? 'confirmada' : 'pendente',
+      origem: 'online',
+      observacoes: state.cliente.obs,
+    };
+    const created = await DB.saveReservation(reserva);
+    if (valorPago > 0) await DB.addPayment({ reservaId: created.id, valor: valorPago, forma: state.pagamento });
+    document.getElementById('confirmCode').textContent = created.codigo;
+    show(5);
+  } catch(err) {
+    console.error(err);
+    btn.textContent = 'Confirmar reserva ✓';
+    btn.disabled = false;
+  }
 }
 
-document.getElementById('btnNext').addEventListener('click', () => {
+document.getElementById('btnNext').addEventListener('click', async () => {
   if (state.step === 1) { if (step1Valid()) { renderRooms(); show(2); } }
   else if (state.step === 2) { if (step2Valid()) show(3); }
   else if (state.step === 3) { if (step3Valid()) { updateSummary(); show(4); } }
-  else if (state.step === 4) { if (step4Valid()) confirmar(); }
+  else if (state.step === 4) { if (step4Valid()) await confirmar(); }
 });
 document.getElementById('btnBack').addEventListener('click', () => {
   if (state.step > 1) show(state.step - 1);
 });
+})();
 </script>
 </body>
 </html>
