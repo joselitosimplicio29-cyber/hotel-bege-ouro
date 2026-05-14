@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/style.css?v=3">
 </head>
 <body>
 
@@ -183,7 +183,7 @@
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 <script src="js/supabase-config.js"></script>
 <script src="js/db.js"></script>
-<script src="js/site.js"></script>
+<script src="js/site.js?v=3"></script>
 <script>
 (async function() {
   await DB.load();
@@ -200,9 +200,7 @@
   const featRooms = ['q301', 'q201', 'q101'].map(id => DB.room(id)).filter(Boolean);
   grid.innerHTML = featRooms.map(r => `
     <article class="room-card">
-      <div class="room-photo" data-room-id="${r.id}" style="background-image: url('${imgForRoom(r)}'); cursor: zoom-in;" role="img" aria-label="Foto do quarto ${r.tipo}">
-        <span class="room-tag">${r.tipo}</span>
-      </div>
+      ${window.renderInlineCarousel(r, 'room-tag')}
       <div class="room-body">
         <h3>Quarto ${r.numero} · ${r.tipo}</h3>
         <div class="room-meta">

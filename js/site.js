@@ -353,6 +353,46 @@ function roomGallery(roomId) {
   return [primary, IMG.banheiroPia];
 }
 
+window.renderInlineCarousel = function(room, tagClass) {
+  const photos = window.roomGallery(room.id);
+  // Basic structure if no photos
+  if (!photos || photos.length === 0) {
+    return `<div class="room-photo" data-room-id="${room.id}" role="img" aria-label="Foto do quarto ${room.tipo}">
+              <span class="${tagClass}">${room.tipo}</span>
+            </div>`;
+  }
+  // Single photo fallback
+  if (photos.length === 1) {
+    return `<div class="room-photo" data-room-id="${room.id}" style="background-image: url('${photos[0]}'); cursor: zoom-in;" role="img" aria-label="Foto do quarto ${room.tipo}">
+              <span class="${tagClass}">${room.tipo}</span>
+            </div>`;
+  }
+  // Inline carousel
+  const slides = photos.map((url, i) => `<div class="inline-slide" style="background-image: url('${url}'); ${i === 0 ? '' : 'display:none;'}"></div>`).join('');
+  return `
+    <div class="room-photo inline-carousel" data-room-id="${room.id}" data-idx="0" data-total="${photos.length}" style="cursor: zoom-in;" role="img" aria-label="Foto do quarto ${room.tipo}">
+      <div class="inline-track">${slides}</div>
+      <button class="inline-prev" onclick="window.moveInlineCarousel(event, -1, this)" aria-label="Foto anterior">&#8249;</button>
+      <button class="inline-next" onclick="window.moveInlineCarousel(event, 1, this)" aria-label="Próxima foto">&#8250;</button>
+      <span class="${tagClass}">${room.tipo}</span>
+    </div>
+  `;
+};
+
+window.moveInlineCarousel = function(event, dir, btn) {
+  event.stopPropagation(); // Previne abrir o modal fullscreen
+  const container = btn.closest('.inline-carousel');
+  const slides = container.querySelectorAll('.inline-slide');
+  let idx = parseInt(container.getAttribute('data-idx'));
+  const total = parseInt(container.getAttribute('data-total'));
+  
+  slides[idx].style.display = 'none';
+  idx = ((idx + dir) % total + total) % total;
+  slides[idx].style.display = '';
+  
+  container.setAttribute('data-idx', idx);
+};
+
 window.SITE = SITE;
 window.IMG = IMG;
 window.imgForRoom = imgForRoom;

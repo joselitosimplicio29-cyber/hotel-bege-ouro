@@ -446,10 +446,37 @@ img:hover { filter: sepia(0) contrast(1) saturate(1); }
   position: relative;
   overflow: hidden;
 }
+
+/* Inline Carousel inside Room Photo */
+.inline-carousel { padding: 0; margin: 0; }
+.inline-track { width: 100%; height: 100%; position: absolute; inset: 0; }
+.inline-slide { width: 100%; height: 100%; background-size: cover; background-position: center; position: absolute; inset: 0; transition: opacity 0.3s; }
+.inline-prev, .inline-next {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(0,0,0,0.5);
+  color: white;
+  border: none;
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  font-size: 24px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  z-index: 5;
+  opacity: 0;
+  transition: opacity 0.2s, background 0.2s;
+}
+.room-photo:hover .inline-prev, .room-photo:hover .inline-next { opacity: 1; }
+.inline-prev:hover, .inline-next:hover { background: var(--dourado); color: var(--escuro); }
+.inline-prev { left: 12px; }
+.inline-next { right: 12px; }
+
 .room-photo::after {
   content: '';
   position: absolute; inset: 0;
   background: linear-gradient(rgba(0,0,0,0) 60%, rgba(26,19,13,0.4));
+  pointer-events: none;
 }
 .room-tag {
   position: absolute;
@@ -462,7 +489,7 @@ img:hover { filter: sepia(0) contrast(1) saturate(1); }
   letter-spacing: 0.2em;
   text-transform: uppercase;
   font-weight: 600;
-  z-index: 2;
+  z-index: 10;
 }
 .room-body { padding: 30px; flex: 1; display: flex; flex-direction: column; }
 .room-body h3 { margin-bottom: 8px; font-size: 1.3rem; }
