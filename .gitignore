@@ -5,5 +5,3 @@ Thumbs.db
 node_modules/
 .vercel/
 
-# Supabase — chaves reais (nunca commitar)
-js/supabase-config.js
