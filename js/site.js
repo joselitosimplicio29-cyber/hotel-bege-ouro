@@ -438,4 +438,6 @@ function roomGallery(roomId) {
 
 window.SITE = SITE;
 window.IMG = IMG;
-window.imgForR
+window.imgForRoom = imgForRoom;
+window.roomGallery = roomGallery;
+window.HOTEL_INFO = HOTEL_INFO;
