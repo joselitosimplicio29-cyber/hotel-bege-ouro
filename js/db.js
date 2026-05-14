@@ -1,331 +1,282 @@
 /* ============================================================
-   HOTEL BEGE OURO — CAMADA DE DADOS (localStorage)
-   Simula um banco de dados real. Substituir por Prisma/Postgres
-   quando migrar para produção (Next.js).
+   HOTEL BEGE OURO — CAMADA DE DADOS (Supabase)
+   API pública mantida igual ao localStorage, mas métodos de
+   escrita agora são async. Leituras são síncronas via cache.
    ============================================================ */
 
-/* IMPORTANTE: cada vez que o SEED for alterado (quartos, preços, tipos),
-   incrementar a versão do DB_KEY força o navegador a recarregar os dados novos.
-   Isso descarta dados de teste antigos que tinham informações desatualizadas. */
-const DB_KEY = 'begeouro_db_v3';
+/* === Instância Supabase === */
+const _sb = window.supabase.createClient(
+  window.SUPABASE_CONFIG.url,
+  window.SUPABASE_CONFIG.anonKey
+);
 
-/* Limpa versões antigas do banco para evitar dados defasados */
-['begeouro_db_v1', 'begeouro_db_v2'].forEach(k => {
-  try { localStorage.removeItem(k); } catch(e) {}
-});
-
-const SEED = {
-  users: [
-    { id: 'u1', nome: 'Administrador', email: 'admin@begeouro.com', senha: 'admin123', perfil: 'admin' },
-    { id: 'u2', nome: 'Maria Recepção', email: 'maria@begeouro.com', senha: 'maria123', perfil: 'funcionario' },
-    { id: 'u3', nome: 'João Financeiro', email: 'joao@begeouro.com', senha: 'joao123', perfil: 'financeiro' },
-  ],
-  rooms: [
-    { id: 'q101', numero: '101', tipo: 'Individual', capacidade: 1, preco: 190, status: 'disponivel', descricao: 'Quarto individual aconchegante, ideal para viajantes solo. Cama de solteiro, ar-condicionado e mesa de apoio.', amenities: ['Wi-Fi', 'TV 32"', 'Ar-cond.', 'Frigobar'] },
-    { id: 'q102', numero: '102', tipo: 'Individual', capacidade: 1, preco: 190, status: 'disponivel', descricao: 'Praticidade e conforto em um ambiente planejado para uma pessoa.', amenities: ['Wi-Fi', 'TV 32"', 'Ar-cond.', 'Frigobar'] },
-    { id: 'q103', numero: '103', tipo: 'Standard',   capacidade: 2, preco: 280, status: 'disponivel', descricao: 'Quarto standard com decoração clássica e tons neutros.', amenities: ['Wi-Fi', 'TV 42"', 'Ar-cond.', 'Frigobar'] },
-    { id: 'q201', numero: '201', tipo: 'Superior',  capacidade: 3, preco: 420, status: 'disponivel', descricao: 'Quarto superior com sacada privativa, cama king e área de estar.', amenities: ['Wi-Fi', 'Smart TV', 'Ar-cond.', 'Frigobar', 'Sacada', 'Cofre'] },
-    { id: 'q202', numero: '202', tipo: 'Superior',  capacidade: 3, preco: 420, status: 'reservado', descricao: 'Ambiente sofisticado com vista parcial da serra e enxoval especial.', amenities: ['Wi-Fi', 'Smart TV', 'Ar-cond.', 'Frigobar', 'Sacada', 'Cofre'] },
-    { id: 'q203', numero: '203', tipo: 'Superior',  capacidade: 3, preco: 420, status: 'ocupado', descricao: 'Quarto superior com hidromassagem e iluminação cênica.', amenities: ['Wi-Fi', 'Smart TV', 'Hidro', 'Ar-cond.', 'Frigobar', 'Sacada'] },
-    { id: 'q301', numero: '301', tipo: 'Suíte Master',  capacidade: 2, preco: 690, status: 'disponivel', descricao: 'Suíte master com sala de estar, banheira de imersão e vista panorâmica.', amenities: ['Wi-Fi', 'Smart TV', 'Banheira', 'Ar-cond.', 'Frigobar', 'Sacada', 'Cofre', 'Roupão'] },
-    { id: 'q302', numero: '302', tipo: 'Suíte Família', capacidade: 4, preco: 780, status: 'disponivel', descricao: 'Suíte ampla para famílias, com dois ambientes e dois banheiros.', amenities: ['Wi-Fi', 'Smart TV', 'Ar-cond.', 'Frigobar', '2 Banheiros', 'Sofá-cama'] },
-    { id: 'q303', numero: '303', tipo: 'Suíte Master',  capacidade: 2, preco: 690, status: 'manutencao', descricao: 'Em manutenção elétrica até nova ordem.', amenities: ['Wi-Fi', 'Smart TV', 'Banheira', 'Ar-cond.', 'Frigobar'] },
-  ],
-  clients: [
-    { id: 'c1', nome: 'Carlos Andrade',  cpf: '111.222.333-44', telefone: '(75) 98876-1100', email: 'carlos@email.com', criadoEm: '2026-04-12' },
-    { id: 'c2', nome: 'Marina Souza',    cpf: '222.333.444-55', telefone: '(71) 99812-3344', email: 'marina@email.com', criadoEm: '2026-04-20' },
-    { id: 'c3', nome: 'Roberto Lima',    cpf: '333.444.555-66', telefone: '(11) 99988-7766', email: 'roberto@email.com', criadoEm: '2026-04-25' },
-  ],
-  reservations: [
-    {
-      id: 'r1', codigo: 'BO-2026-0001',
-      clienteId: 'c1', quartoId: 'q203',
-      entrada: '2026-05-02', saida: '2026-05-06',
-      diarias: 4, hospedes: 2,
-      valorDiaria: 420, valorTotal: 1680, valorPago: 1680, valorRestante: 0,
-      formaPagamento: 'pix',
-      statusPagamento: 'pago',
-      statusReserva: 'em_hospedagem',
-      origem: 'online',
-      observacoes: 'Aniversário de casamento.',
-      criadaEm: '2026-04-12T15:30:00',
-    },
-    {
-      id: 'r2', codigo: 'BO-2026-0002',
-      clienteId: 'c2', quartoId: 'q202',
-      entrada: '2026-05-08', saida: '2026-05-12',
-      diarias: 4, hospedes: 2,
-      valorDiaria: 420, valorTotal: 1680, valorPago: 800, valorRestante: 880,
-      formaPagamento: 'cartao',
-      statusPagamento: 'parcial',
-      statusReserva: 'confirmada',
-      origem: 'manual',
-      observacoes: '',
-      criadaEm: '2026-04-20T10:15:00',
-    },
-    {
-      id: 'r3', codigo: 'BO-2026-0003',
-      clienteId: 'c3', quartoId: 'q301',
-      entrada: '2026-04-28', saida: '2026-05-01',
-      diarias: 3, hospedes: 2,
-      valorDiaria: 690, valorTotal: 2070, valorPago: 2070, valorRestante: 0,
-      formaPagamento: 'cartao',
-      statusPagamento: 'pago',
-      statusReserva: 'finalizada',
-      origem: 'online',
-      observacoes: 'Cliente VIP, lua-de-mel.',
-      criadaEm: '2026-04-10T09:00:00',
-    },
-  ],
-  consumptions: [
-    { id: 'cs1', reservaId: 'r1', produto: 'Vinho tinto Malbec',  qtd: 1, valorUnit: 180, valorTotal: 180, dataHora: '2026-05-02T20:30:00', funcionarioId: 'u2' },
-    { id: 'cs2', reservaId: 'r1', produto: 'Café da manhã extra', qtd: 2, valorUnit: 45,  valorTotal: 90,  dataHora: '2026-05-03T08:00:00', funcionarioId: 'u2' },
-    { id: 'cs3', reservaId: 'r1', produto: 'Massagem relaxante',  qtd: 1, valorUnit: 220, valorTotal: 220, dataHora: '2026-05-04T16:00:00', funcionarioId: 'u2' },
-  ],
-  payments: [
-    { id: 'p1', reservaId: 'r1', valor: 1680, forma: 'pix',    data: '2026-04-12T15:35:00' },
-    { id: 'p2', reservaId: 'r2', valor: 800,  forma: 'cartao', data: '2026-04-20T10:18:00' },
-    { id: 'p3', reservaId: 'r3', valor: 2070, forma: 'cartao', data: '2026-04-10T09:05:00' },
-  ],
-  session: null,
-  meta: { lastReservationNumber: 3 },
+/* === Cache em memória === */
+const _cache = {
+  rooms: [],
+  clients: [],
+  reservations: [],
+  consumptions: [],
+  payments: [],
+  profiles: [],
+  loaded: false,
 };
 
-const DB = {
-  load() {
-    const raw = localStorage.getItem(DB_KEY);
-    if (!raw) {
-      this.save(SEED);
-      return JSON.parse(JSON.stringify(SEED));
-    }
-    try { return JSON.parse(raw); } catch { this.save(SEED); return JSON.parse(JSON.stringify(SEED)); }
-  },
-  save(data) { localStorage.setItem(DB_KEY, JSON.stringify(data)); },
-  reset() { localStorage.removeItem(DB_KEY); return this.load(); },
+/* === Mappers snake_case → camelCase === */
+function _mapReservation(r) {
+  if (!r) return null;
+  return {
+    id: r.id, codigo: r.codigo, clienteId: r.cliente_id, quartoId: r.quarto_id,
+    entrada: r.entrada, saida: r.saida, diarias: r.diarias, hospedes: r.hospedes,
+    valorDiaria: Number(r.valor_diaria), valorTotal: Number(r.valor_total),
+    valorPago: Number(r.valor_pago), valorRestante: Number(r.valor_restante),
+    formaPagamento: r.forma_pagamento, statusPagamento: r.status_pagamento,
+    statusReserva: r.status_reserva, origem: r.origem, observacoes: r.observacoes,
+    checkInAt: r.check_in_at, checkOutAt: r.check_out_at, criadaEm: r.criada_em,
+  };
+}
+function _mapClient(c) {
+  if (!c) return null;
+  return { id: c.id, nome: c.nome, cpf: c.cpf, telefone: c.telefone, email: c.email, observacoes: c.observacoes, criadoEm: c.created_at?.slice(0, 10) };
+}
+function _mapPayment(p) {
+  if (!p) return null;
+  return { id: p.id, reservaId: p.reserva_id, valor: Number(p.valor), forma: p.forma, data: p.data };
+}
+function _mapConsumption(c) {
+  if (!c) return null;
+  return { id: c.id, reservaId: c.reserva_id, produto: c.produto, qtd: c.qtd, valorUnit: Number(c.valor_unit), valorTotal: Number(c.valor_total), funcionarioId: c.funcionario_id, dataHora: c.data_hora };
+}
+function _mapProfile(p) {
+  if (!p) return null;
+  return { id: p.id, nome: p.nome, perfil: p.perfil };
+}
 
-  uid(prefix = 'x') { return prefix + '_' + Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-3); },
+/* ============================================================
+   DB — API pública
+   ============================================================ */
+const DB = {
+
+  /* ===== Bootstrap: carrega tudo do Supabase para o cache ===== */
+  async load() {
+    const [roomsRes, clientsRes, reservsRes, consuRes, paysRes, profRes] = await Promise.all([
+      _sb.from('rooms').select('*').order('numero'),
+      _sb.from('clients').select('*').order('nome'),
+      _sb.from('reservations').select('*').order('criada_em', { ascending: false }),
+      _sb.from('consumptions').select('*').order('data_hora', { ascending: false }),
+      _sb.from('payments').select('*').order('data', { ascending: false }),
+      _sb.from('profiles').select('*'),
+    ]);
+    _cache.rooms        = (roomsRes.data   || []);
+    _cache.clients      = (clientsRes.data || []).map(_mapClient);
+    _cache.reservations = (reservsRes.data || []).map(_mapReservation);
+    _cache.consumptions = (consuRes.data   || []).map(_mapConsumption);
+    _cache.payments     = (paysRes.data    || []).map(_mapPayment);
+    _cache.profiles     = (profRes.data    || []).map(_mapProfile);
+    _cache.loaded       = true;
+    this._subscribeRealtime();
+  },
+
+  _realtimeStarted: false,
+  _subscribeRealtime() {
+    if (this._realtimeStarted) return;
+    this._realtimeStarted = true;
+    _sb.channel('hotel-live')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'rooms' }, async () => {
+        const { data } = await _sb.from('rooms').select('*').order('numero');
+        _cache.rooms = data || [];
+        if (window.App?.view === 'mapa') window.App.view_mapa?.();
+        if (window.App?.view === 'quartos') window.App.view_quartos?.();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'reservations' }, async () => {
+        const { data } = await _sb.from('reservations').select('*').order('criada_em', { ascending: false });
+        _cache.reservations = (data || []).map(_mapReservation);
+        if (window.App?.view === 'reservas') window.App.view_reservas?.();
+        if (window.App?.view === 'checkin')  window.App.view_checkin?.();
+        if (window.App?.view === 'inicio')   window.App.view_inicio?.();
+        if (window.App?.view === 'mapa')     window.App.view_mapa?.();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'payments' }, async () => {
+        const { data } = await _sb.from('payments').select('*').order('data', { ascending: false });
+        _cache.payments = (data || []).map(_mapPayment);
+        if (window.App?.view === 'pagamentos') window.App.view_pagamentos?.();
+        if (window.App?.view === 'inicio')     window.App.view_inicio?.();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'consumptions' }, async () => {
+        const { data } = await _sb.from('consumptions').select('*').order('data_hora', { ascending: false });
+        _cache.consumptions = (data || []).map(_mapConsumption);
+        if (window.App?.view === 'consumo') window.App.view_consumo?.();
+      })
+      .subscribe();
+  },
 
   /* ===== Auth ===== */
-  login(email, senha) {
-    const db = this.load();
-    const user = db.users.find(u => u.email === email && u.senha === senha);
-    if (!user) return null;
-    db.session = { userId: user.id, ts: Date.now() };
-    this.save(db);
-    return user;
+  async login(email, senha) {
+    const { data, error } = await _sb.auth.signInWithPassword({ email, password: senha });
+    if (error) return null;
+    const { data: prof } = await _sb.from('profiles').select('*').eq('id', data.user.id).single();
+    if (!prof) return null;
+    _cache._currentUser = { id: data.user.id, email: data.user.email, ...prof };
+    return _cache._currentUser;
   },
-  logout() { const db = this.load(); db.session = null; this.save(db); },
-  currentUser() {
-    const db = this.load();
-    if (!db.session) return null;
-    return db.users.find(u => u.id === db.session.userId) || null;
+  async logout() { await _sb.auth.signOut(); _cache._currentUser = null; },
+  async currentUser() {
+    if (_cache._currentUser) return _cache._currentUser;
+    const { data: { user } } = await _sb.auth.getUser();
+    if (!user) return null;
+    const { data: prof } = await _sb.from('profiles').select('*').eq('id', user.id).single();
+    if (!prof) return null;
+    _cache._currentUser = { id: user.id, email: user.email, ...prof };
+    return _cache._currentUser;
   },
 
   /* ===== Quartos ===== */
-  rooms() { return this.load().rooms; },
-  room(id) { return this.rooms().find(r => r.id === id); },
-  saveRoom(room) {
-    const db = this.load();
+  rooms() { return _cache.rooms; },
+  room(id) { return _cache.rooms.find(r => r.id === id); },
+  async saveRoom(room) {
+    const p = { id: room.id || undefined, numero: room.numero, tipo: room.tipo, capacidade: room.capacidade, preco: room.preco, status: room.status, descricao: room.descricao, amenities: room.amenities, updated_at: new Date().toISOString() };
     if (room.id) {
-      const i = db.rooms.findIndex(r => r.id === room.id);
-      if (i >= 0) db.rooms[i] = { ...db.rooms[i], ...room };
+      await _sb.from('rooms').update(p).eq('id', room.id);
+      const idx = _cache.rooms.findIndex(r => r.id === room.id);
+      if (idx >= 0) _cache.rooms[idx] = { ..._cache.rooms[idx], ...p };
     } else {
-      room.id = this.uid('q');
-      db.rooms.push(room);
+      p.id = 'q' + Date.now().toString(36);
+      const { data } = await _sb.from('rooms').insert(p).select().single();
+      if (data) _cache.rooms.push(data);
+      return data;
     }
-    this.save(db);
     return room;
   },
-  deleteRoom(id) {
-    const db = this.load();
-    db.rooms = db.rooms.filter(r => r.id !== id);
-    this.save(db);
-  },
-  setRoomStatus(id, status) {
-    const db = this.load();
-    const r = db.rooms.find(x => x.id === id);
-    if (r) { r.status = status; this.save(db); }
+  async deleteRoom(id) { await _sb.from('rooms').delete().eq('id', id); _cache.rooms = _cache.rooms.filter(r => r.id !== id); },
+  async setRoomStatus(id, status) {
+    await _sb.from('rooms').update({ status, updated_at: new Date().toISOString() }).eq('id', id);
+    const r = _cache.rooms.find(x => x.id === id); if (r) r.status = status;
   },
 
   /* ===== Clientes ===== */
-  clients() { return this.load().clients; },
-  client(id) { return this.clients().find(c => c.id === id); },
-  saveClient(c) {
-    const db = this.load();
+  clients() { return _cache.clients; },
+  client(id) { return _cache.clients.find(c => c.id === id); },
+  async saveClient(c) {
+    const p = { nome: c.nome, cpf: c.cpf, telefone: c.telefone, email: c.email, observacoes: c.observacoes };
     if (c.id) {
-      const i = db.clients.findIndex(x => x.id === c.id);
-      if (i >= 0) db.clients[i] = { ...db.clients[i], ...c };
+      await _sb.from('clients').update(p).eq('id', c.id);
+      const idx = _cache.clients.findIndex(x => x.id === c.id);
+      if (idx >= 0) _cache.clients[idx] = { ..._cache.clients[idx], ...c };
     } else {
-      c.id = this.uid('c');
-      c.criadoEm = new Date().toISOString().slice(0, 10);
-      db.clients.push(c);
+      const { data } = await _sb.from('clients').insert(p).select().single();
+      const mapped = _mapClient(data); _cache.clients.push(mapped); return mapped;
     }
-    this.save(db);
     return c;
   },
-  findOrCreateClient({ nome, cpf, telefone, email }) {
-    const db = this.load();
-    let c = db.clients.find(x => x.cpf === cpf || x.email === email);
+  async findOrCreateClient({ nome, cpf, telefone, email }) {
+    let c = _cache.clients.find(x => (cpf && x.cpf === cpf) || (email && x.email === email));
     if (c) return c;
-    c = { id: this.uid('c'), nome, cpf, telefone, email, criadoEm: new Date().toISOString().slice(0, 10) };
-    db.clients.push(c);
-    this.save(db);
-    return c;
+    let query = _sb.from('clients').select('*');
+    if (cpf) query = query.eq('cpf', cpf); else if (email) query = query.eq('email', email);
+    const { data: existing } = await query.maybeSingle();
+    if (existing) { c = _mapClient(existing); _cache.clients.push(c); return c; }
+    const { data } = await _sb.from('clients').insert({ nome, cpf, telefone, email }).select().single();
+    c = _mapClient(data); _cache.clients.push(c); return c;
   },
+  async deleteClient(id) { await _sb.from('clients').delete().eq('id', id); _cache.clients = _cache.clients.filter(c => c.id !== id); },
 
   /* ===== Reservas ===== */
-  reservations() { return this.load().reservations; },
-  reservation(id) { return this.reservations().find(r => r.id === id); },
-  reservationByCode(code) { return this.reservations().find(r => r.codigo === code); },
-
-  isRoomAvailable(quartoId, entrada, saida, ignoreReservaId = null) {
-    const ds = new Date(entrada).getTime();
-    const de = new Date(saida).getTime();
+  reservations() { return _cache.reservations; },
+  reservation(id) { return _cache.reservations.find(r => r.id === id); },
+  isRoomAvailable(quartoId, entrada, saida, ignoreId = null) {
+    const ds = new Date(entrada).getTime(), de = new Date(saida).getTime();
     if (de <= ds) return false;
-    const conflict = this.reservations().some(r => {
-      if (r.id === ignoreReservaId) return false;
-      if (r.quartoId !== quartoId) return false;
-      if (['cancelada', 'finalizada'].includes(r.statusReserva)) return false;
-      const rs = new Date(r.entrada).getTime();
-      const re = new Date(r.saida).getTime();
-      return ds < re && de > rs;
+    return !_cache.reservations.some(r => {
+      if (r.id === ignoreId || r.quartoId !== quartoId) return false;
+      if (['cancelada','finalizada'].includes(r.statusReserva)) return false;
+      return ds < new Date(r.saida).getTime() && de > new Date(r.entrada).getTime();
     });
-    return !conflict;
   },
-
   availableRoomsBetween(entrada, saida) {
-    return this.rooms().filter(r => {
-      if (r.status === 'manutencao') return false;
-      return this.isRoomAvailable(r.id, entrada, saida);
-    });
+    return _cache.rooms.filter(r => r.status !== 'manutencao' && this.isRoomAvailable(r.id, entrada, saida));
   },
-
-  saveReservation(res) {
-    const db = this.load();
+  async saveReservation(res) {
+    const p = {
+      cliente_id: res.clienteId, quarto_id: res.quartoId, entrada: res.entrada, saida: res.saida,
+      diarias: res.diarias, hospedes: res.hospedes, valor_diaria: res.valorDiaria,
+      valor_total: res.valorTotal, valor_pago: res.valorPago || 0, valor_restante: res.valorRestante,
+      forma_pagamento: res.formaPagamento, status_pagamento: res.statusPagamento,
+      status_reserva: res.statusReserva, origem: res.origem, observacoes: res.observacoes || '',
+    };
     if (res.id) {
-      const i = db.reservations.findIndex(r => r.id === res.id);
-      if (i >= 0) db.reservations[i] = { ...db.reservations[i], ...res };
+      await _sb.from('reservations').update(p).eq('id', res.id);
+      const idx = _cache.reservations.findIndex(r => r.id === res.id);
+      if (idx >= 0) _cache.reservations[idx] = { ..._cache.reservations[idx], ...res };
+      await this.refreshRoomStatuses(); return res;
     } else {
-      res.id = this.uid('r');
-      db.meta.lastReservationNumber = (db.meta.lastReservationNumber || 0) + 1;
-      const ano = new Date().getFullYear();
-      res.codigo = `BO-${ano}-${String(db.meta.lastReservationNumber).padStart(4, '0')}`;
-      res.criadaEm = new Date().toISOString();
-      db.reservations.push(res);
+      const { data } = await _sb.from('reservations').insert(p).select().single();
+      const mapped = _mapReservation(data); _cache.reservations.unshift(mapped);
+      await this.refreshRoomStatuses(); return mapped;
     }
-    this.save(db);
-    this.refreshRoomStatuses();
-    return res;
   },
-
-  cancelReservation(id) {
-    const db = this.load();
-    const r = db.reservations.find(x => x.id === id);
-    if (r) { r.statusReserva = 'cancelada'; this.save(db); this.refreshRoomStatuses(); }
+  async cancelReservation(id) {
+    await _sb.from('reservations').update({ status_reserva: 'cancelada' }).eq('id', id);
+    const r = _cache.reservations.find(x => x.id === id); if (r) r.statusReserva = 'cancelada';
+    await this.refreshRoomStatuses();
   },
-
-  checkIn(id) {
-    const db = this.load();
-    const r = db.reservations.find(x => x.id === id);
-    if (!r) return;
+  async checkIn(id) {
+    const r = _cache.reservations.find(x => x.id === id); if (!r) return;
+    await _sb.from('reservations').update({ status_reserva: 'em_hospedagem', check_in_at: new Date().toISOString() }).eq('id', id);
     r.statusReserva = 'em_hospedagem';
-    r.checkInAt = new Date().toISOString();
-    const q = db.rooms.find(x => x.id === r.quartoId);
-    if (q) q.status = 'ocupado';
-    this.save(db);
+    await _sb.from('rooms').update({ status: 'ocupado', updated_at: new Date().toISOString() }).eq('id', r.quartoId);
+    const q = _cache.rooms.find(x => x.id === r.quartoId); if (q) q.status = 'ocupado';
   },
-
-  checkOut(id) {
-    const db = this.load();
-    const r = db.reservations.find(x => x.id === id);
-    if (!r) return;
+  async checkOut(id) {
+    const r = _cache.reservations.find(x => x.id === id); if (!r) return;
+    await _sb.from('reservations').update({ status_reserva: 'finalizada', check_out_at: new Date().toISOString() }).eq('id', id);
     r.statusReserva = 'finalizada';
-    r.checkOutAt = new Date().toISOString();
-    const q = db.rooms.find(x => x.id === r.quartoId);
-    if (q) q.status = 'limpeza';
-    this.save(db);
+    await _sb.from('rooms').update({ status: 'limpeza', updated_at: new Date().toISOString() }).eq('id', r.quartoId);
+    const q = _cache.rooms.find(x => x.id === r.quartoId); if (q) q.status = 'limpeza';
   },
-
-  /** Recalcula o status de cada quarto com base nas reservas ativas e na data atual. */
-  refreshRoomStatuses() {
-    const db = this.load();
+  async refreshRoomStatuses() {
     const today = new Date().toISOString().slice(0, 10);
-    db.rooms.forEach(q => {
-      if (['limpeza', 'manutencao'].includes(q.status)) return;
-      const ativa = db.reservations.find(r =>
-        r.quartoId === q.id &&
-        !['cancelada', 'finalizada'].includes(r.statusReserva) &&
-        r.entrada <= today && r.saida > today
-      );
-      const futura = db.reservations.find(r =>
-        r.quartoId === q.id &&
-        ['confirmada', 'pendente'].includes(r.statusReserva) &&
-        r.entrada > today
-      );
-      if (ativa) q.status = ativa.statusReserva === 'em_hospedagem' ? 'ocupado' : 'reservado';
-      else if (futura) q.status = 'reservado';
-      else q.status = 'disponivel';
-    });
-    this.save(db);
+    for (const q of _cache.rooms) {
+      if (['limpeza','manutencao'].includes(q.status)) continue;
+      const ativa = _cache.reservations.find(r => r.quartoId === q.id && !['cancelada','finalizada'].includes(r.statusReserva) && r.entrada <= today && r.saida > today);
+      const futura = _cache.reservations.find(r => r.quartoId === q.id && ['confirmada','pendente'].includes(r.statusReserva) && r.entrada > today);
+      const ns = ativa ? (ativa.statusReserva === 'em_hospedagem' ? 'ocupado' : 'reservado') : futura ? 'reservado' : 'disponivel';
+      if (q.status !== ns) { q.status = ns; await _sb.from('rooms').update({ status: ns, updated_at: new Date().toISOString() }).eq('id', q.id); }
+    }
   },
 
   /* ===== Consumo ===== */
-  consumptions(reservaId = null) {
-    const all = this.load().consumptions;
-    return reservaId ? all.filter(c => c.reservaId === reservaId) : all;
-  },
-  addConsumption(c) {
-    const db = this.load();
-    c.id = this.uid('cs');
-    c.dataHora = c.dataHora || new Date().toISOString();
-    db.consumptions.push(c);
-    this.save(db);
-    return c;
-  },
-  removeConsumption(id) {
-    const db = this.load();
-    db.consumptions = db.consumptions.filter(c => c.id !== id);
-    this.save(db);
+  consumptions(reservaId = null) { const a = _cache.consumptions; return reservaId ? a.filter(c => c.reservaId === reservaId) : a; },
+  async addConsumption(c) {
+    const p = { reserva_id: c.reservaId, produto: c.produto, qtd: c.qtd, valor_unit: c.valorUnit, valor_total: c.valorTotal, funcionario_id: c.funcionarioId || null, data_hora: c.dataHora || new Date().toISOString() };
+    const { data } = await _sb.from('consumptions').insert(p).select().single();
+    const m = _mapConsumption(data); _cache.consumptions.unshift(m); return m;
   },
 
   /* ===== Pagamentos ===== */
-  payments(reservaId = null) {
-    const all = this.load().payments;
-    return reservaId ? all.filter(p => p.reservaId === reservaId) : all;
-  },
-  addPayment(p) {
-    const db = this.load();
-    p.id = this.uid('p');
-    p.data = p.data || new Date().toISOString();
-    db.payments.push(p);
-    /* atualiza valor pago da reserva */
-    const r = db.reservations.find(x => x.id === p.reservaId);
+  payments(reservaId = null) { const a = _cache.payments; return reservaId ? a.filter(p => p.reservaId === reservaId) : a; },
+  async addPayment(p) {
+    const payload = { reserva_id: p.reservaId, valor: p.valor, forma: p.forma, data: p.data || new Date().toISOString() };
+    const { data } = await _sb.from('payments').insert(payload).select().single();
+    const m = _mapPayment(data); _cache.payments.unshift(m);
+    const r = _cache.reservations.find(x => x.id === p.reservaId);
     if (r) {
       r.valorPago = (r.valorPago || 0) + p.valor;
       r.valorRestante = Math.max(0, r.valorTotal - r.valorPago);
       r.statusPagamento = r.valorRestante === 0 ? 'pago' : (r.valorPago > 0 ? 'parcial' : 'pendente');
+      await _sb.from('reservations').update({ valor_pago: r.valorPago, valor_restante: r.valorRestante, status_pagamento: r.statusPagamento }).eq('id', p.reservaId);
     }
-    this.save(db);
-    return p;
+    return m;
   },
 
-  /* ===== Helpers / Utils ===== */
+  /* ===== Profiles ===== */
+  profiles() { return _cache.profiles; },
+  profile(id) { return _cache.profiles.find(p => p.id === id); },
+
+  /* ===== Helpers ===== */
   formatBRL(v) { return (v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); },
-  formatDate(d) {
-    if (!d) return '—';
-    const x = typeof d === 'string' ? new Date(d) : d;
-    return x.toLocaleDateString('pt-BR');
-  },
-  formatDateTime(d) {
-    if (!d) return '—';
-    const x = typeof d === 'string' ? new Date(d) : d;
-    return x.toLocaleString('pt-BR');
-  },
-  diffDays(d1, d2) {
-    const a = new Date(d1).getTime();
-    const b = new Date(d2).getTime();
-    return Math.max(0, Math.round((b - a) / (1000 * 60 * 60 * 24)));
-  },
+  formatDate(d) { if (!d) return '—'; const x = typeof d === 'string' ? new Date(d + (d.length === 10 ? 'T12:00:00' : '')) : d; return x.toLocaleDateString('pt-BR'); },
+  formatDateTime(d) { if (!d) return '—'; return new Date(d).toLocaleString('pt-BR'); },
+  diffDays(d1, d2) { return Math.max(0, Math.round((new Date(d2) - new Date(d1)) / 86400000)); },
 };
 
 window.DB = DB;
+window._sb = _sb;
