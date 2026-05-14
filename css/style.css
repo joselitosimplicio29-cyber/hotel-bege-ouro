@@ -1060,24 +1060,27 @@ textarea { resize: vertical; min-height: 100px; }
 .modal {
   position: fixed;
   inset: 0;
-  background: rgba(10, 8, 5, 0.98);
-  z-index: 2000;
+  background: rgba(0, 0, 0, 0.82);
+  z-index: 9999;
   display: flex;
   align-items: center;
   justify-content: center;
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.4s ease;
-  padding: 40px;
+  padding: 24px;
 }
 .modal.open {
   opacity: 1;
   pointer-events: auto;
 }
 .modal-content {
-  max-width: 90%;
-  max-height: 90%;
   position: relative;
+  max-width: 90vw;
+  max-height: 90vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   transform: scale(0.95);
   transition: transform 0.4s cubic-bezier(0.2, 0, 0.2, 1);
 }
@@ -1085,18 +1088,32 @@ textarea { resize: vertical; min-height: 100px; }
   transform: scale(1);
 }
 .modal-content img {
-  width: 100%;
+  max-width: 90vw;
+  max-height: 85vh;
+  width: auto;
   height: auto;
-  box-shadow: 0 30px 90px rgba(0,0,0,0.6);
-  border: 1px solid rgba(201, 169, 97, 0.2);
+  object-fit: contain;
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.45);
+  background: #111;
 }
 .modal-close {
-  position: absolute;
-  top: -40px; right: 0;
-  color: var(--creme);
-  font-size: 2.5rem;
+  position: fixed;
+  top: 24px;
+  right: 32px;
+  font-size: 36px;
+  color: #fff;
+  background: transparent;
+  border: none;
   cursor: pointer;
+  z-index: 10000;
   line-height: 1;
   transition: var(--transicao);
 }
 .modal-close:hover { color: var(--dourado); transform: rotate(90deg); }
+
+@media (max-width: 768px) {
+  .modal { padding: 12px; }
+  .modal-content img { max-width: 96vw; max-height: 80vh; }
+  .modal-close { top: 12px; right: 18px; font-size: 32px; }
+}

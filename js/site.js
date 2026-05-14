@@ -197,117 +197,17 @@ const SITE = {
   },
 
   setupGalleryModal() {
-    /* Injeta CSS dos controles do carrossel uma única vez */
-    if (!document.getElementById('carouselCSS')) {
-      const css = document.createElement('style');
-      css.id = 'carouselCSS';
-      css.textContent = `
-        .modal .modal-prev, .modal .modal-next {
-          position: absolute !important;
-          top: 50% !important;
-          background: rgba(26,19,13,0.65) !important;
-          color: #DBC082 !important;
-          border: 1px solid rgba(201,169,97,0.4) !important;
-          width: 58px !important;
-          height: 58px !important;
-          min-width: 58px !important;
-          padding: 0 !important;
-          font-size: 2.2rem !important;
-          line-height: 56px !important;
-          cursor: pointer !important;
-          border-radius: 50% !important;
-          z-index: 10 !important;
-          transition: all .25s !important;
-          font-family: Georgia, serif !important;
-          text-align: center !important;
-          letter-spacing: 0 !important;
-          backdrop-filter: blur(8px) !important;
-          transform: translateY(-50%) !important;
-          white-space: nowrap !important;
-          writing-mode: horizontal-tb !important;
-        }
-        .modal .modal-prev { left: 30px !important; right: auto !important; }
-        .modal .modal-next { right: 30px !important; left: auto !important; }
-        .modal .modal-prev:hover, .modal .modal-next:hover {
-          background: #C9A961 !important;
-          color: #1A130D !important;
-          border-color: #C9A961 !important;
-          transform: translateY(-50%) scale(1.1) !important;
-        }
-        .modal .modal-counter {
-          position: absolute !important;
-          bottom: 40px !important;
-          left: 50% !important;
-          transform: translateX(-50%) !important;
-          background: rgba(26,19,13,0.75) !important;
-          color: #DBC082 !important;
-          padding: 10px 24px !important;
-          font-size: 0.85rem !important;
-          letter-spacing: 0.18em !important;
-          font-weight: 600 !important;
-          backdrop-filter: blur(8px) !important;
-          z-index: 10 !important;
-          white-space: nowrap !important;
-          writing-mode: horizontal-tb !important;
-          width: auto !important;
-          max-width: none !important;
-          line-height: 1 !important;
-        }
-        .modal .modal-caption {
-          position: absolute !important;
-          top: 40px !important;
-          left: 50% !important;
-          transform: translateX(-50%) !important;
-          background: rgba(26,19,13,0.75) !important;
-          color: #FAF6EE !important;
-          padding: 10px 26px !important;
-          font-family: 'Playfair Display', Georgia, serif !important;
-          font-size: 1rem !important;
-          font-style: italic !important;
-          backdrop-filter: blur(8px) !important;
-          z-index: 10 !important;
-          white-space: nowrap !important;
-          writing-mode: horizontal-tb !important;
-          max-width: 80vw !important;
-          width: auto !important;
-          line-height: 1.4 !important;
-          text-align: center !important;
-        }
-        .modal .modal-close {
-          z-index: 11 !important;
-        }
-        @media (max-width: 640px) {
-          .modal .modal-prev, .modal .modal-next {
-            width: 44px !important; height: 44px !important;
-            min-width: 44px !important;
-            font-size: 1.7rem !important; line-height: 42px !important;
-          }
-          .modal .modal-prev { left: 12px !important; }
-          .modal .modal-next { right: 12px !important; }
-          .modal .modal-caption { font-size: 0.85rem !important; padding: 8px 18px !important; top: 24px !important; }
-          .modal .modal-counter { font-size: 0.78rem !important; bottom: 24px !important; padding: 8px 18px !important; }
-        }
-      `;
-      document.head.appendChild(css);
-    }
 
     const modal = document.createElement('div');
     modal.className = 'modal';
     modal.innerHTML = `
-      <button class="modal-prev" aria-label="Foto anterior">&#8249;</button>
-      <button class="modal-next" aria-label="Próxima foto">&#8250;</button>
+      <button class="modal-prev seta-galeria seta-esquerda" aria-label="Foto anterior">&#8249;</button>
+      <button class="modal-next seta-galeria seta-direita" aria-label="Próxima foto">&#8250;</button>
       <div class="modal-caption" id="modalCaption" style="display:none;"></div>
-      <div class="modal-counter" id="modalCounter">1 / 1</div>
+      <div class="modal-counter contador-fotos" id="modalCounter">1 / 1</div>
       <div class="modal-content">
-        <span class="modal-close">&times;</span>
-        <img src="" alt="">
-        <div class="modal-fallback" style="display:none; padding: 80px 40px; text-align: center; color: var(--creme, #FAF6EE); background: linear-gradient(135deg, rgba(60,40,25,0.9), rgba(26,19,13,0.95)); min-width: 60vw; min-height: 50vh; display: none; align-items: center; justify-content: center; flex-direction: column; font-family: 'Playfair Display', Georgia, serif;">
-          <div style="font-size: 3rem; margin-bottom: 20px; color: var(--dourado-claro, #DBC082);">📷</div>
-          <div style="font-size: 1.3rem; margin-bottom: 14px;">Foto ainda não disponível</div>
-          <div style="font-size: 0.85rem; opacity: 0.7; font-family: 'Inter', sans-serif; font-style: normal; letter-spacing: 0.05em; max-width: 480px; line-height: 1.6;">
-            Esta foto será exibida assim que você salvar o arquivo correspondente na pasta <code style="background: rgba(255,255,255,0.1); padding: 2px 8px; color: var(--dourado-claro, #DBC082);">img/</code> do projeto.
-          </div>
-        </div>
+        <button class="modal-close botao-fechar">&times;</button>
+        <img src="" alt="Imagem da galeria">
       </div>`;
     document.body.appendChild(modal);
 
@@ -315,7 +215,6 @@ const SITE = {
     const prev = modal.querySelector('.modal-prev');
     const next = modal.querySelector('.modal-next');
     const img = modal.querySelector('img');
-    const fallback = modal.querySelector('.modal-fallback');
     const counter = modal.querySelector('.modal-counter');
     const caption = modal.querySelector('.modal-caption');
 
@@ -323,20 +222,31 @@ const SITE = {
     let captions = [];
     let idx = 0;
 
-    img.addEventListener('error', () => {
-      img.style.display = 'none';
-      fallback.style.display = 'flex';
-    });
-    img.addEventListener('load', () => {
-      img.style.display = '';
-      fallback.style.display = 'none';
-    });
+    async function filterValidImages(urls, caps) {
+      const validPhotos = [];
+      const validCaps = [];
+      const promises = urls.map((url, i) => {
+        return new Promise((resolve) => {
+          const checkImg = new Image();
+          checkImg.onload = () => resolve({ url, cap: caps[i] });
+          checkImg.onerror = () => resolve(null);
+          checkImg.src = url;
+        });
+      });
+      const results = await Promise.all(promises);
+      results.forEach(res => {
+        if (res) {
+          validPhotos.push(res.url);
+          validCaps.push(res.cap);
+        }
+      });
+      return { validPhotos, validCaps };
+    }
 
     const showAt = (i) => {
       if (!photos.length) return;
       idx = ((i % photos.length) + photos.length) % photos.length;
       img.style.display = '';
-      fallback.style.display = 'none';
       img.src = photos[idx];
       counter.textContent = `${idx + 1} / ${photos.length}`;
       const multi = photos.length > 1;
@@ -351,18 +261,24 @@ const SITE = {
       }
     };
 
-    document.addEventListener('click', (e) => {
+    document.addEventListener('click', async (e) => {
       /* Clique em um quarto (room-photo, room-row-photo, pick-photo) → carrossel completo do quarto */
       const roomEl = e.target.closest('[data-room-id]');
       if (roomEl && window.DB) {
         const room = DB.room(roomEl.dataset.roomId);
         if (room) {
-          photos = window.roomGallery(room.id);
-          captions = [
+          const rawPhotos = window.roomGallery(room.id);
+          const rawCaps = [
             `Quarto ${room.numero} · ${room.tipo}`,
             `Banheiro · pia em mármore`,
             `Banheiro · box do chuveiro`,
           ];
+          
+          const { validPhotos, validCaps } = await filterValidImages(rawPhotos, rawCaps);
+          if (validPhotos.length === 0) return;
+          
+          photos = validPhotos;
+          captions = validCaps;
           showAt(0);
           modal.classList.add('open');
           document.body.style.overflow = 'hidden';
@@ -371,12 +287,15 @@ const SITE = {
       }
       /* Clique em galeria comum, intro-photo ou room-photo sem ID → foto única */
       const item = e.target.closest('.gallery-item, .room-photo, .room-row-photo, .pick-photo, .intro-photo');
-      if (item) {
+      if (item && !roomEl) {
         const bg = window.getComputedStyle(item).backgroundImage;
         if (bg && bg !== 'none') {
           const url = bg.slice(5, -2).replace(/"/g, "");
-          photos = [url];
-          captions = [item.querySelector('.label')?.textContent || ''];
+          const { validPhotos, validCaps } = await filterValidImages([url], [item.querySelector('.label')?.textContent || '']);
+          if (validPhotos.length === 0) return;
+          
+          photos = validPhotos;
+          captions = validCaps;
           showAt(0);
           modal.classList.add('open');
           document.body.style.overflow = 'hidden';
