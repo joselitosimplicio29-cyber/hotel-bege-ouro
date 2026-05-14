@@ -14,14 +14,10 @@ const App = {
   },
   can(view) { return this.perms[this.user?.perfil]?.includes(view); },
 
-  async init() {
-    /* Carrega todos os dados do Supabase para o cache */
-    document.getElementById('content').innerHTML = '<div style="padding:60px; text-align:center; color:var(--cinza-texto);">Carregando...</div>';
-    await DB.load();
-
-    this.user = await DB.currentUser();
+  init() {
+    this.user = DB.currentUser();
     if (!this.user) { location.href = 'login.html'; return; }
-    await DB.refreshRoomStatuses();
+    DB.refreshRoomStatuses();
 
     document.getElementById('userName').textContent = this.user.nome;
     document.getElementById('userRole').textContent = this.user.perfil;
@@ -32,8 +28,8 @@ const App = {
       if (!this.can(v)) a.style.display = 'none';
       a.addEventListener('click', e => { e.preventDefault(); this.go(v); });
     });
-    document.getElementById('logoutBtn').addEventListener('click', async e => {
-      e.preventDefault(); await DB.logout(); location.href = 'login.html';
+    document.getElementById('logoutBtn').addEventListener('click', e => {
+      e.preventDefault(); DB.logout(); location.href = 'login.html';
     });
     document.getElementById('modalClose').addEventListener('click', () => this.closeModal());
     document.getElementById('modal').addEventListener('click', e => { if (e.target.id === 'modal') this.closeModal(); });
@@ -276,9 +272,9 @@ const App = {
     this.openModal(`Quarto ${room.numero}`, body, foot);
   },
 
-  async saveRoomStatus(id) {
+  saveRoomStatus(id) {
     const status = document.getElementById('newStatus').value;
-    await DB.setRoomStatus(id, status);
+    DB.setRoomStatus(id, status);
     this.toast('Status atualizado.');
     this.closeModal();
     if (this.view === 'mapa') this.view_mapa();
@@ -414,7 +410,7 @@ const App = {
     });
   },
 
-  async saveNewReserva() {
+  saveNewReserva() {
     const cliSel = document.getElementById('nrCliente').value;
     const entrada = document.getElementById('nrEntrada').value;
     const saida = document.getElementById('nrSaida').value;
@@ -436,13 +432,13 @@ const App = {
       const tel = document.getElementById('ncTel').value.trim();
       const email = document.getElementById('ncEmail').value.trim();
       if (!nome || !cpf) return this.toast('Preencha os dados do novo cliente.', 'error');
-      const c = await DB.findOrCreateClient({ nome, cpf, telefone: tel, email });
+      const c = DB.findOrCreateClient({ nome, cpf, telefone: tel, email });
       clienteId = c.id;
     }
 
     const room = DB.room(quartoId);
     const total = room.preco * diarias;
-    const r = await DB.saveReservation({
+    const r = DB.saveReservation({
       clienteId, quartoId, entrada, saida, diarias, hospedes,
       valorDiaria: room.preco, valorTotal: total, valorPago: pago, valorRestante: total - pago,
       formaPagamento: forma,
@@ -450,7 +446,7 @@ const App = {
       statusReserva: pago >= total ? 'confirmada' : 'pendente',
       origem: 'manual', observacoes: obs,
     });
-    if (pago > 0) await DB.addPayment({ reservaId: r.id, valor: pago, forma });
+    if (pago > 0) DB.addPayment({ reservaId: r.id, valor: pago, forma });
 
     this.closeModal();
     this.toast('Reserva criada com sucesso!');
@@ -530,8 +526,8 @@ const App = {
     this.openModal(`Reserva ${r.codigo}`, body, foot);
   },
 
-  async doCheckIn(id) {
-    await DB.checkIn(id);
+  doCheckIn(id) {
+    DB.checkIn(id);
     this.toast('Check-in realizado!');
     this.closeModal();
     if (this.view === 'reservas') this.view_reservas();
@@ -540,9 +536,9 @@ const App = {
     else this.view_inicio();
   },
 
-  async doCheckOut(id) {
+  doCheckOut(id) {
     if (!confirm('Confirmar check-out? Será gerado o comprovante final.')) return;
-    await DB.checkOut(id);
+    DB.checkOut(id);
     this.toast('Check-out realizado!');
     this.closeModal();
     setTimeout(() => PDF.comprovante(id), 200);
@@ -552,9 +548,9 @@ const App = {
     else this.view_inicio();
   },
 
-  async cancelReserva(id) {
+  cancelReserva(id) {
     if (!confirm('Tem certeza que quer cancelar essa reserva?')) return;
-    await DB.cancelReservation(id);
+    DB.cancelReservation(id);
     this.toast('Reserva cancelada.');
     this.closeModal();
     this.view_reservas();
@@ -664,7 +660,7 @@ const App = {
                 ${consumos.slice().sort((a,b) => b.dataHora.localeCompare(a.dataHora)).slice(0, 30).map(c => {
                   const r = DB.reservation(c.reservaId);
                   const room = r ? DB.room(r.quartoId) : null;
-                  const fn = DB.profiles().find(u => u.id === c.funcionarioId);
+                  const fn = DB.load().users.find(u => u.id === c.funcionarioId);
                   return `
                     <tr>
                       <td>${DB.formatDateTime(c.dataHora)}</td>
@@ -710,12 +706,12 @@ const App = {
     this.openModal('Lançar consumo', body, foot);
   },
 
-  async saveConsumo(reservaId) {
+  saveConsumo(reservaId) {
     const produto = document.getElementById('csProduto').value.trim();
     const qtd = parseInt(document.getElementById('csQtd').value) || 0;
     const vu = parseFloat(document.getElementById('csVu').value) || 0;
     if (!produto || qtd < 1 || vu <= 0) return this.toast('Preencha todos os campos.', 'error');
-    await DB.addConsumption({
+    DB.addConsumption({
       reservaId, produto, qtd, valorUnit: vu, valorTotal: qtd * vu,
       funcionarioId: this.user.id,
     });
@@ -786,7 +782,7 @@ const App = {
     this.openModal(id ? `Editar quarto ${room.numero}` : 'Novo quarto', body, foot);
   },
 
-  async saveRoom(id) {
+  saveRoom(id) {
     const data = {
       id: id || null,
       numero: document.getElementById('qNumero').value.trim(),
@@ -798,15 +794,15 @@ const App = {
       amenities: document.getElementById('qAmen').value.split(',').map(s => s.trim()).filter(Boolean),
     };
     if (!data.numero) return this.toast('Número obrigatório.', 'error');
-    await DB.saveRoom(data);
+    DB.saveRoom(data);
     this.closeModal();
     this.toast('Quarto salvo.');
     this.view_quartos();
   },
 
-  async deleteRoom(id) {
+  deleteRoom(id) {
     if (!confirm('Excluir este quarto?')) return;
-    await DB.deleteRoom(id);
+    DB.deleteRoom(id);
     this.closeModal();
     this.toast('Quarto excluído.');
     this.view_quartos();
@@ -862,7 +858,7 @@ const App = {
     this.openModal(id ? 'Editar cliente' : 'Novo cliente', body, foot);
   },
 
-  async saveClient(id) {
+  saveClient(id) {
     const data = {
       id: id || null,
       nome: document.getElementById('cNome').value.trim(),
@@ -871,7 +867,7 @@ const App = {
       email: document.getElementById('cEmail').value.trim(),
     };
     if (!data.nome || !data.cpf) return this.toast('Nome e CPF obrigatórios.', 'error');
-    await DB.saveClient(data);
+    DB.saveClient(data);
     this.closeModal();
     this.toast('Cliente salvo.');
     this.view_clientes();
@@ -974,11 +970,11 @@ const App = {
     this.openModal('Novo pagamento', body, foot);
   },
 
-  async savePagamento(reservaId) {
+  savePagamento(reservaId) {
     const valor = parseFloat(document.getElementById('pgValor').value);
     const forma = document.getElementById('pgForma').value;
     if (!valor || valor <= 0) return this.toast('Valor inválido.', 'error');
-    await DB.addPayment({ reservaId, valor, forma });
+    DB.addPayment({ reservaId, valor, forma });
     this.toast('Pagamento lançado!');
     this.closeModal();
     if (this.view === 'pagamentos') this.view_pagamentos();
