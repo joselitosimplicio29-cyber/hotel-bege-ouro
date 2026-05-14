@@ -270,8 +270,7 @@ const SITE = {
           const rawPhotos = window.roomGallery(room.id);
           const rawCaps = [
             `Quarto ${room.numero} · ${room.tipo}`,
-            `Banheiro · pia em mármore`,
-            `Banheiro · box do chuveiro`,
+            `Banheiro · pia em mármore`
           ];
           
           const { validPhotos, validCaps } = await filterValidImages(rawPhotos, rawCaps);
@@ -351,7 +350,7 @@ const SITE = {
 function roomGallery(roomId) {
   const room = (window.DB && DB.room) ? DB.room(roomId) : null;
   const primary = room ? imgForRoom(room) : IMG.quartoSolteiroDuplo;
-  return [primary, IMG.banheiroPia, IMG.banheiroBox];
+  return [primary, IMG.banheiroPia];
 }
 
 window.SITE = SITE;
