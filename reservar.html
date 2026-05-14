@@ -4,6 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Reserva online — Hotel Bege Ouro</title>
+  <meta name="description" content="Reserve sua estadia no Hotel Bege Ouro. Confirmação imediata, Pix com 5% de desconto.">
+  <meta property="og:title" content="Reserva online — Hotel Bege Ouro">
+  <meta property="og:description" content="Reserve online com confirmação imediata. Pix com 5% de desconto.">
+  <meta property="og:image" content="https://hotel-bege-ouro.vercel.app/img/fachada.png">
+  <meta property="og:url" content="https://hotel-bege-ouro.vercel.app/reservar.html">
+  <meta property="og:type" content="website">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
@@ -14,6 +20,7 @@
   <div class="container">
 
     <div style="text-align:center; margin-bottom: 40px;">
+      <h1 class="sr-only">Reserva online — Hotel Bege Ouro</h1>
       <span class="section-eyebrow" style="display:inline-block;">Reserva online</span>
       <h2 style="margin-top:10px; font-size: 2.4rem;">Sua estadia em <em style="font-style:italic;color:var(--dourado-deep);">poucos passos</em></h2>
       <p style="color:var(--cinza-texto); margin-top:10px;">Confirmação imediata. Seguro, simples e elegante.</p>
@@ -139,9 +146,9 @@
               <p style="color:var(--cinza-texto);">Sua reserva foi registrada com sucesso. Anote o código abaixo:</p>
               <div class="code-box" id="confirmCode">—</div>
               <p style="color:var(--cinza-texto);">Enviamos os detalhes para o seu e-mail. Em caso de dúvidas:</p>
-              <p style="margin-top:8px;"><strong>📞 (75) 99999-0000</strong> &nbsp;·&nbsp; <strong>contato@begeouro.com</strong></p>
+              <p style="margin-top:8px;"><strong>📞 (74) 98139-9221</strong> &nbsp;·&nbsp; <strong>begeourohotel@hotmail.com</strong></p>
               <div style="margin-top:36px; display:flex; gap:14px; justify-content:center; flex-wrap:wrap;">
-                <a href="https://wa.me/5575999990000" target="_blank" class="btn btn-primary">💬 Falar no WhatsApp</a>
+                <a href="https://wa.me/5574981399221" target="_blank" class="btn btn-primary">💬 Falar no WhatsApp</a>
                 <a href="index.html" class="btn btn-dark">Voltar ao início</a>
               </div>
             </div>
@@ -187,7 +194,7 @@
             <div style="font-size: 1.4rem;">💬</div>
             <div>
               <div style="font-size: 0.78rem; color: var(--cinza-texto); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600;">Precisa de ajuda?</div>
-              <a href="https://wa.me/5575999990000" target="_blank" style="color: var(--marrom); font-weight: 600;">Fale no WhatsApp →</a>
+              <a href="https://wa.me/5574981399221" target="_blank" style="color: var(--marrom); font-weight: 600;">Fale no WhatsApp →</a>
             </div>
           </div>
         </div>
@@ -240,6 +247,10 @@ function show(step){
   if (step === 4) next.textContent = 'Confirmar reserva ✓';
   else if (step === 5) next.style.display = 'none';
   else next.textContent = 'Próximo →';
+  
+  if (step === 2 && !state.quartoId) next.disabled = true;
+  else next.disabled = false;
+
   if (step < 5) next.style.display = '';
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -309,13 +320,18 @@ function renderRooms(){
       state.quartoId = card.dataset.id;
       grid.querySelectorAll('.pick-card').forEach(c => c.classList.remove('selected'));
       card.classList.add('selected');
+      document.getElementById('btnNext').disabled = false;
       updateSummary();
     });
   });
   if (preQuarto && rooms.find(r => r.id === preQuarto)) {
     state.quartoId = preQuarto;
     const card = grid.querySelector(`[data-id="${preQuarto}"]`);
-    if (card) { card.classList.add('selected'); updateSummary(); }
+    if (card) { 
+      card.classList.add('selected'); 
+      document.getElementById('btnNext').disabled = false;
+      updateSummary(); 
+    }
   }
 }
 

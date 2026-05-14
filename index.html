@@ -5,6 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Hotel Bege Ouro — Hospedagem sofisticada na Bahia</title>
   <meta name="description" content="Hotel Bege Ouro — conforto, sofisticação e hospitalidade. Reserve online sua estadia em begeouro.com.">
+  <meta property="og:title" content="Hotel Bege Ouro — Hospedagem sofisticada na Bahia">
+  <meta property="og:description" content="Conforto, sofisticação e hospitalidade. Reserve online sua estadia.">
+  <meta property="og:image" content="https://hotel-bege-ouro.vercel.app/img/fachada.png">
+  <meta property="og:url" content="https://hotel-bege-ouro.vercel.app/">
+  <meta property="og:type" content="website">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap" rel="stylesheet">
@@ -14,7 +19,7 @@
 
 <!-- HERO -->
 <section class="hero">
-  <div class="hero-bg"></div>
+  <div class="hero-bg" role="img" aria-label="Vista aérea do Hotel Bege Ouro com piscina"></div>
   <div class="container hero-inner">
     <span class="hero-eyebrow">begeouro.com · desde 2014</span>
     <h1>Onde cada detalhe<em>convida ao descanso.</em></h1>
@@ -34,7 +39,7 @@
 <!-- INTRO -->
 <section class="section">
   <div class="container intro-grid">
-    <div class="intro-photo" id="introPhoto"></div>
+    <div class="intro-photo" id="introPhoto" role="img" aria-label="Lobby do hotel com decoração sofisticada e lustres clássicos"></div>
     <div class="intro-text">
       <span class="section-eyebrow">Sobre o hotel</span>
       <h2>Hospitalidade que pertence a outro tempo, com o conforto de hoje.</h2>
@@ -195,7 +200,7 @@
   const featRooms = ['q301', 'q201', 'q101'].map(id => DB.room(id)).filter(Boolean);
   grid.innerHTML = featRooms.map(r => `
     <article class="room-card">
-      <div class="room-photo" data-room-id="${r.id}" style="background-image: url('${imgForRoom(r)}'); cursor: zoom-in;">
+      <div class="room-photo" data-room-id="${r.id}" style="background-image: url('${imgForRoom(r)}'); cursor: zoom-in;" role="img" aria-label="Foto do quarto ${r.tipo}">
         <span class="room-tag">${r.tipo}</span>
       </div>
       <div class="room-body">
@@ -228,7 +233,7 @@
     { url: IMG.jardim, label: 'Jardim & deck', cls: '' },
   ];
   document.getElementById('galleryPreview').innerHTML = galleryItems.map(g => `
-    <div class="gallery-item ${g.cls}" style="background-image: url('${g.url}');">
+    <div class="gallery-item ${g.cls}" style="background-image: url('${g.url}');" role="img" aria-label="${g.lbl}">
       <span class="label">${g.label}</span>
     </div>
   `).join('');

@@ -743,7 +743,8 @@ textarea { resize: vertical; min-height: 100px; }
   overflow: hidden;
 }
 .pick-card:hover { border-color: var(--dourado-claro); transform: translateY(-3px); box-shadow: var(--sombra); }
-.pick-card.selected { border-color: var(--dourado); box-shadow: 0 0 0 3px rgba(201,169,97,0.2); }
+.pick-card.selected { border-color: var(--dourado); box-shadow: 0 0 0 4px rgba(201,169,97,0.4); background: rgba(201,169,97,0.05); transform: translateY(-4px); }
+.pick-card.selected::after { content: '✓ Selecionado'; position: absolute; top: 12px; right: 12px; background: var(--dourado); color: var(--branco); font-size: 0.75rem; font-weight: 600; padding: 4px 10px; border-radius: 20px; z-index: 5; }
 .pick-card .pick-photo {
   aspect-ratio: 16/10;
   background-size: cover;

@@ -54,11 +54,11 @@ function imgForRoom(room) {
 }
 
 const HOTEL_INFO = {
-  whatsapp: '5581999999999',
-  whatsappLabel: '(81) 99999-9999',
+  whatsapp: '5574981399221',
+  whatsappLabel: '(74) 98139-9221',
   instagram: 'https://instagram.com/hotelbegeouro',
-  email: 'contato@begeouro.com',
-  telefone: '(75) 99999-0000',
+  email: 'begeourohotel@hotmail.com',
+  telefone: '(74) 98139-9221',
   endereco: 'Rua das Acácias, 1000 — Centro · Bahia',
 };
 
@@ -145,7 +145,6 @@ const SITE = {
               <h4>Endereço</h4>
               <ul>
                 <li>${HOTEL_INFO.endereco}</li>
-                <li>CEP 00000-000</li>
               </ul>
               <div style="margin-top: 14px; aspect-ratio: 16/9; background: rgba(255,255,255,0.05); overflow: hidden;">
                 <iframe

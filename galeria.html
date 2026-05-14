@@ -4,6 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Galeria — Hotel Bege Ouro</title>
+  <meta name="description" content="Galeria de fotos do Hotel Bege Ouro: quartos, piscina, restaurante e áreas comuns.">
+  <meta property="og:title" content="Galeria — Hotel Bege Ouro">
+  <meta property="og:description" content="Quartos, piscina, restaurante e áreas comuns.">
+  <meta property="og:image" content="https://hotel-bege-ouro.vercel.app/img/fachada.png">
+  <meta property="og:url" content="https://hotel-bege-ouro.vercel.app/galeria.html">
+  <meta property="og:type" content="website">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
@@ -120,7 +126,7 @@
 
   const grid = document.getElementById('galleryGrid');
   grid.innerHTML = items.map((g, i) => `
-    <div class="gallery-item ${g.cls}" data-cat="${g.cat}" data-idx="${i}" style="background-image: url('${g.url}');">
+    <div class="gallery-item ${g.cls}" data-cat="${g.cat}" data-idx="${i}" style="background-image: url('${g.url}');" role="img" aria-label="${g.lbl}">
       <span class="label">${g.label}</span>
     </div>
   `).join('');
