@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Galeria — Hotel Bege Ouro</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .page-header {
+      padding: 200px 0 110px;
+      background: linear-gradient(rgba(26,19,13,0.78), rgba(60,40,25,0.7)),
+                  url('https://images.unsplash.com/photo-1582719508461-905c673771fd?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80') center/cover;
+      color: var(--creme);
+      text-align: center;
+    }
+    .page-header h1 { color: var(--creme); }
+    .page-header h1 em { color: var(--dourado-claro); font-style: italic; }
+    .page-header .section-eyebrow { color: var(--dourado-claro); }
+    .page-header .section-eyebrow::before, .page-header .section-eyebrow::after { background: var(--dourado-claro); }
+    .page-header p { color: rgba(250, 246, 238, 0.85); }
+
+    .filter-bar { display:flex; gap:12px; justify-content:center; margin-bottom: 50px; flex-wrap:wrap; }
+    .filter-btn {
+      padding: 11px 26px;
+      background: var(--branco);
+      border: 1px solid var(--cinza-borda);
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 0.82rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      transition: var(--transicao);
+      color: var(--cinza-texto);
+      font-weight: 600;
+    }
+    .filter-btn:hover { border-color: var(--dourado); color: var(--escuro); }
+    .filter-btn.active { background: var(--escuro); color: var(--dourado-claro); border-color: var(--escuro); }
+
+    /* lightbox */
+    .lightbox {
+      position: fixed; inset: 0;
+      background: rgba(26, 19, 13, 0.95);
+      z-index: 200;
+      display: none;
+      align-items: center; justify-content: center;
+      padding: 30px;
+    }
+    .lightbox.open { display: flex; }
+    .lightbox img { max-width: 90vw; max-height: 90vh; box-shadow: 0 30px 80px rgba(0,0,0,0.5); }
+    .lightbox-close { position: absolute; top: 20px; right: 30px; color: var(--creme); background: none; border: 0; font-size: 2.2rem; cursor: pointer; }
+
+    @media(max-width: 880px) {
+      .page-header { padding: 150px 0 80px; }
+    }
+  </style>
+</head>
+<body>
+
+<header class="page-header">
+  <div class="container">
+    <span class="section-eyebrow">Galeria</span>
+    <h1 style="margin-top:18px;">Conheça nossos <em>ambientes</em>.</h1>
+    <p style="max-width:640px; margin: 22px auto 0; font-size: 1.1rem;">Um passeio visual pelos espaços do Hotel Bege Ouro. Ambientes pensados para acolher, descansar e encantar.</p>
+  </div>
+</header>
+
+<section class="section">
+  <div class="container">
+    <div class="filter-bar">
+      <button class="filter-btn active" data-cat="todos">Todos</button>
+      <button class="filter-btn" data-cat="quartos">Quartos</button>
+      <button class="filter-btn" data-cat="areas">Áreas comuns</button>
+      <button class="filter-btn" data-cat="gastronomia">Gastronomia</button>
+      <button class="filter-btn" data-cat="lazer">Lazer</button>
+    </div>
+
+    <div class="gallery-grid" id="galleryGrid"></div>
+  </div>
+</section>
+
+<section class="cta-banner">
+  <div class="container">
+    <h2>Viva pessoalmente <em>essa atmosfera</em></h2>
+    <p>Fotos contam pouco do que é estar aqui. Reserve sua estadia e descubra.</p>
+    <a href="reservar.html" class="btn btn-primary">Reservar online →</a>
+  </div>
+</section>
+
+<div class="lightbox" id="lightbox">
+  <button class="lightbox-close" id="lbClose">×</button>
+  <img id="lbImg" src="" alt="">
+</div>
+
+<script src="js/db.js"></script>
+<script src="js/site.js"></script>
+<script>
+  SITE.init('galeria');
+
+  const items = [
+    { url: IMG.quartoSuiteMaster,  cat: 'quartos',     label: 'Suíte Master · 301', cls: 'tall' },
+    { url: IMG.lobby,              cat: 'areas',       label: 'Lobby principal',     cls: 'wide' },
+    { url: IMG.cafe,               cat: 'gastronomia', label: 'Café da manhã',       cls: '' },
+    { url: IMG.quartoSolteiroDuplo, cat: 'quartos',     label: 'Quarto com camas de solteiro', cls: '' },
+    { url: IMG.piscina,            cat: 'lazer',       label: 'Piscina externa',     cls: '' },
+    { url: IMG.quartoSuiteFamilia, cat: 'quartos',     label: 'Suíte Família · 302', cls: 'tall' },
+    { url: IMG.restaurante,        cat: 'gastronomia', label: 'Restaurante interno', cls: '' },
+    { url: IMG.recepcao,           cat: 'areas',       label: 'Recepção',            cls: '' },
+    { url: IMG.jardim,             cat: 'lazer',       label: 'Jardim & deck',       cls: 'wide' },
+    { url: IMG.quartoSuperior,     cat: 'quartos',     label: 'Quarto Superior',     cls: '' },
+    { url: IMG.bar,                cat: 'gastronomia', label: 'Bar & lounge',        cls: '' },
+    { url: IMG.spa,                cat: 'lazer',       label: 'Spa & massagem',      cls: 'tall' },
+    { url: IMG.banheiroPia,        cat: 'quartos',     label: 'Banheiro — pia em mármore',  cls: '' },
+    { url: IMG.banheiroBox,        cat: 'quartos',     label: 'Banheiro — box do chuveiro', cls: '' },
+    { url: IMG.fachada,            cat: 'areas',       label: 'Fachada do hotel',    cls: 'wide' },
+  ];
+
+  const grid = document.getElementById('galleryGrid');
+  grid.innerHTML = items.map((g, i) => `
+    <div class="gallery-item ${g.cls}" data-cat="${g.cat}" data-idx="${i}" style="background-image: url('${g.url}');">
+      <span class="label">${g.label}</span>
+    </div>
+  `).join('');
+
+  /* filtros */
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const cat = btn.dataset.cat;
+      document.querySelectorAll('.gallery-item').forEach(item => {
+        item.style.display = (cat === 'todos' || item.dataset.cat === cat) ? '' : 'none';
+      });
+    });
+  });
+
+  /* lightbox */
+  const lb = document.getElementById('lightbox');
+  const lbImg = document.getElementById('lbImg');
+  grid.addEventListener('click', e => {
+    const item = e.target.closest('.gallery-item');
+    if (!item) return;
+    lbImg.src = items[item.dataset.idx].url.replace('w=1400', 'w=2400');
+    lb.classList.add('open');
+  });
+  document.getElementById('lbClose').addEventListener('click', () => lb.classList.remove('open'));
+  lb.addEventListener('click', e => { if (e.target === lb) lb.classList.remove('open'); });
+</script>
+</body>
+</html>

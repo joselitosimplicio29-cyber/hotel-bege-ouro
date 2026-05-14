@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reserva online — Hotel Bege Ouro</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<section class="book-shell">
+  <div class="container">
+
+    <div style="text-align:center; margin-bottom: 40px;">
+      <span class="section-eyebrow" style="display:inline-block;">Reserva online</span>
+      <h2 style="margin-top:10px; font-size: 2.4rem;">Sua estadia em <em style="font-style:italic;color:var(--dourado-deep);">poucos passos</em></h2>
+      <p style="color:var(--cinza-texto); margin-top:10px;">Confirmação imediata. Seguro, simples e elegante.</p>
+    </div>
+
+    <div class="book-layout">
+      <!-- COLUNA PRINCIPAL -->
+      <div class="book-card">
+        <div class="steps">
+          <div class="step active" data-step="1"><span class="num">01</span> Datas</div>
+          <div class="step" data-step="2"><span class="num">02</span> Quarto</div>
+          <div class="step" data-step="3"><span class="num">03</span> Dados</div>
+          <div class="step" data-step="4"><span class="num">04</span> Pagamento</div>
+          <div class="step" data-step="5"><span class="num">05</span> Confirmação</div>
+        </div>
+
+        <div class="book-body">
+          <!-- Step 1 -->
+          <div class="step-panel" data-panel="1">
+            <h3 style="margin-bottom:8px;">Quando você quer ficar?</h3>
+            <p style="color:var(--cinza-texto); margin-bottom:24px;">Escolha as datas e a quantidade de hóspedes para verificarmos a disponibilidade.</p>
+            <div class="form-grid">
+              <div class="form-row">
+                <label class="field">Data de entrada</label>
+                <input type="date" id="fEntrada">
+                <div class="field-error" id="errEntrada">Selecione uma data válida.</div>
+              </div>
+              <div class="form-row">
+                <label class="field">Data de saída</label>
+                <input type="date" id="fSaida">
+                <div class="field-error" id="errSaida">A saída deve ser depois da entrada.</div>
+              </div>
+              <div class="form-row">
+                <label class="field">Quantidade de pessoas</label>
+                <select id="fHospedes">
+                  <option value="1">1 pessoa</option>
+                  <option value="2" selected>2 pessoas</option>
+                  <option value="3">3 pessoas</option>
+                  <option value="4">4 pessoas</option>
+                </select>
+              </div>
+              <div class="form-row">
+                <label class="field">Diárias</label>
+                <input type="text" id="fDiarias" readonly value="—" style="background: var(--creme);">
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 2 -->
+          <div class="step-panel" data-panel="2" style="display:none;">
+            <h3 style="margin-bottom:8px;">Quartos disponíveis</h3>
+            <p style="color:var(--cinza-texto); margin-bottom:24px;">Selecione o quarto desejado para sua estadia.</p>
+            <div class="room-pick" id="pickGrid"></div>
+            <div class="field-error" id="errStep2" style="margin-top:14px;">Selecione um quarto para continuar.</div>
+          </div>
+
+          <!-- Step 3 -->
+          <div class="step-panel" data-panel="3" style="display:none;">
+            <h3 style="margin-bottom:8px;">Seus dados</h3>
+            <p style="color:var(--cinza-texto); margin-bottom:24px;">Preencha as informações para finalizar a reserva.</p>
+            <div class="form-grid">
+              <div class="form-row full">
+                <label class="field">Nome completo *</label>
+                <input type="text" id="fNome">
+                <div class="field-error" id="errNome">Informe seu nome completo.</div>
+              </div>
+              <div class="form-row">
+                <label class="field">CPF *</label>
+                <input type="text" id="fCpf" placeholder="000.000.000-00" maxlength="14">
+                <div class="field-error" id="errCpf">CPF inválido.</div>
+              </div>
+              <div class="form-row">
+                <label class="field">Telefone *</label>
+                <input type="tel" id="fTelefone" placeholder="(00) 00000-0000" maxlength="15">
+                <div class="field-error" id="errTel">Informe um telefone válido.</div>
+              </div>
+              <div class="form-row full">
+                <label class="field">E-mail *</label>
+                <input type="email" id="fEmail">
+                <div class="field-error" id="errEmail">E-mail inválido.</div>
+              </div>
+              <div class="form-row full">
+                <label class="field">Observações</label>
+                <textarea id="fObs" placeholder="Pedidos especiais, preferências, horário previsto de chegada..."></textarea>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 4 -->
+          <div class="step-panel" data-panel="4" style="display:none;">
+            <h3 style="margin-bottom:8px;">Forma de pagamento</h3>
+            <p style="color:var(--cinza-texto); margin-bottom:24px;">Selecione como deseja efetuar o pagamento. Reservas com Pix têm 5% de desconto.</p>
+            <div class="payment-options" id="payOpts">
+              <div class="pay-opt" data-pay="pix">
+                <div class="ico">⚡</div>
+                <span>Pix</span>
+                <small style="display:block; color:var(--dourado-deep); font-weight:600; margin-top:6px;">5% off</small>
+              </div>
+              <div class="pay-opt" data-pay="cartao">
+                <div class="ico">💳</div>
+                <span>Cartão</span>
+                <small style="display:block; color:var(--cinza-texto); margin-top:6px;">crédito/débito</small>
+              </div>
+              <div class="pay-opt" data-pay="dinheiro">
+                <div class="ico">💵</div>
+                <span>Dinheiro</span>
+                <small style="display:block; color:var(--cinza-texto); margin-top:6px;">no check-in</small>
+              </div>
+              <div class="pay-opt" data-pay="outro">
+                <div class="ico">✦</div>
+                <span>Outro</span>
+                <small style="display:block; color:var(--cinza-texto); margin-top:6px;">consultar</small>
+              </div>
+            </div>
+            <div class="field-error" id="errPay" style="margin-top:14px;">Escolha uma forma de pagamento.</div>
+          </div>
+
+          <!-- Step 5 -->
+          <div class="step-panel" data-panel="5" style="display:none;">
+            <div class="confirm-block">
+              <div class="confirm-icon">✓</div>
+              <h2 style="margin-bottom:12px;">Reserva confirmada!</h2>
+              <p style="color:var(--cinza-texto);">Sua reserva foi registrada com sucesso. Anote o código abaixo:</p>
+              <div class="code-box" id="confirmCode">—</div>
+              <p style="color:var(--cinza-texto);">Enviamos os detalhes para o seu e-mail. Em caso de dúvidas:</p>
+              <p style="margin-top:8px;"><strong>📞 (75) 99999-0000</strong> &nbsp;·&nbsp; <strong>contato@begeouro.com</strong></p>
+              <div style="margin-top:36px; display:flex; gap:14px; justify-content:center; flex-wrap:wrap;">
+                <a href="https://wa.me/5575999990000" target="_blank" class="btn btn-primary">💬 Falar no WhatsApp</a>
+                <a href="index.html" class="btn btn-dark">Voltar ao início</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="book-foot">
+          <button class="btn btn-outline" id="btnBack" style="border-color:var(--cinza-borda); color:var(--escuro); display:none;">← Voltar</button>
+          <span></span>
+          <button class="btn btn-primary" id="btnNext">Próximo →</button>
+        </div>
+      </div>
+
+      <!-- COLUNA RESUMO LATERAL -->
+      <aside class="book-summary" id="bookSummary">
+        <div class="book-summary-photo" id="sumPhoto"></div>
+        <div class="book-summary-body">
+          <h3 id="sumTitle">Sua reserva</h3>
+          <div class="stay" id="sumStay">Selecione as datas para começar</div>
+
+          <div id="sumRows" style="display:none;">
+            <div class="summary-row"><span>Quarto</span><strong id="sumRoom">—</strong></div>
+            <div class="summary-row"><span>Período</span><strong id="sumDates">—</strong></div>
+            <div class="summary-row"><span>Diárias</span><strong id="sumNights">—</strong></div>
+            <div class="summary-row"><span>Hóspedes</span><strong id="sumGuests">—</strong></div>
+            <div class="summary-row"><span>Subtotal</span><strong id="sumSub">—</strong></div>
+            <div class="summary-row" id="sumDiscRow" style="display:none; color:var(--dourado-deep);"><span>Desconto Pix</span><strong id="sumDisc">—</strong></div>
+            <div class="summary-row total"><span>Total</span><span id="sumTotal">R$ 0,00</span></div>
+          </div>
+
+          <div class="policies">
+            <h4>Políticas</h4>
+            <ul>
+              <li><strong>Check-in:</strong> a partir das 14h</li>
+              <li><strong>Check-out:</strong> até as 12h</li>
+              <li><strong>Cancelamento:</strong> grátis até 48h antes</li>
+              <li><strong>Pagamento:</strong> Pix, cartão ou dinheiro</li>
+              <li><strong>Confirmação:</strong> imediata por e-mail</li>
+            </ul>
+          </div>
+
+          <div style="margin-top: 22px; padding: 16px; background: var(--creme); display: flex; align-items: center; gap: 12px;">
+            <div style="font-size: 1.4rem;">💬</div>
+            <div>
+              <div style="font-size: 0.78rem; color: var(--cinza-texto); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600;">Precisa de ajuda?</div>
+              <a href="https://wa.me/5575999990000" target="_blank" style="color: var(--marrom); font-weight: 600;">Fale no WhatsApp →</a>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<script src="js/db.js"></script>
+<script src="js/site.js"></script>
+<script>
+SITE.init('reservar');
+
+const state = {
+  step: 1,
+  entrada: '', saida: '', diarias: 0, hospedes: 2,
+  quartoId: null,
+  cliente: { nome:'', cpf:'', telefone:'', email:'', obs:'' },
+  pagamento: null,
+  total: 0, desconto: 0, totalFinal: 0,
+};
+
+const today = () => new Date().toISOString().slice(0, 10);
+const tomorrow = () => { const d = new Date(); d.setDate(d.getDate()+1); return d.toISOString().slice(0,10); };
+document.getElementById('fEntrada').min = today();
+document.getElementById('fEntrada').value = today();
+document.getElementById('fSaida').min = tomorrow();
+document.getElementById('fSaida').value = tomorrow();
+
+const params = new URLSearchParams(location.search);
+const preTipo = params.get('tipo');
+const preQuarto = params.get('quarto');
+
+function show(step){
+  state.step = step;
+  document.querySelectorAll('.step').forEach(s => {
+    const n = Number(s.dataset.step);
+    s.classList.toggle('active', n === step);
+    s.classList.toggle('done', n < step);
+  });
+  document.querySelectorAll('.step-panel').forEach(p => {
+    p.style.display = Number(p.dataset.panel) === step ? '' : 'none';
+  });
+  document.getElementById('btnBack').style.display = step > 1 && step < 5 ? '' : 'none';
+  const next = document.getElementById('btnNext');
+  if (step === 4) next.textContent = 'Confirmar reserva ✓';
+  else if (step === 5) next.style.display = 'none';
+  else next.textContent = 'Próximo →';
+  if (step < 5) next.style.display = '';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function recalcDiarias(){
+  const e = document.getElementById('fEntrada').value;
+  const s = document.getElementById('fSaida').value;
+  if (e && s) {
+    const d = DB.diffDays(e, s);
+    document.getElementById('fDiarias').value = d > 0 ? `${d} ${d===1?'diária':'diárias'}` : '—';
+    state.entrada = e; state.saida = s; state.diarias = d;
+    state.hospedes = Number(document.getElementById('fHospedes').value);
+    updateSummary();
+  }
+}
+['fEntrada','fSaida','fHospedes'].forEach(id => document.getElementById(id).addEventListener('change', recalcDiarias));
+recalcDiarias();
+
+function showError(id, show = true){
+  const f = document.getElementById(id.replace('err','f'));
+  const e = document.getElementById(id);
+  if (e) e.classList.toggle('show', show);
+  if (f) f.classList.toggle('invalid', show);
+}
+function clearAllErrors(){
+  document.querySelectorAll('.field-error').forEach(e => e.classList.remove('show'));
+  document.querySelectorAll('input.invalid, select.invalid, textarea.invalid').forEach(i => i.classList.remove('invalid'));
+}
+
+function step1Valid(){
+  clearAllErrors();
+  let ok = true;
+  if (!state.entrada) { showError('errEntrada'); ok = false; }
+  if (state.diarias < 1) { showError('errSaida'); ok = false; }
+  return ok;
+}
+
+function renderRooms(){
+  const grid = document.getElementById('pickGrid');
+  let rooms = DB.availableRoomsBetween(state.entrada, state.saida).filter(r => r.capacidade >= state.hospedes);
+  if (preTipo) rooms = rooms.filter(r => r.tipo === preTipo);
+  if (!rooms.length) {
+    grid.innerHTML = `
+      <div style="grid-column:1/-1; text-align:center; padding:60px 20px; background:var(--creme);">
+        <div style="font-size: 2rem; margin-bottom:14px;">😔</div>
+        <h4 style="margin-bottom:8px;">Nenhum quarto disponível</h4>
+        <p style="color:var(--cinza-texto);">Não encontramos quartos disponíveis para essas datas. Tente outro período ou nos chame no WhatsApp.</p>
+        <a href="https://wa.me/5575999990000" target="_blank" class="btn btn-dark btn-sm" style="margin-top:18px;">💬 Falar com a recepção</a>
+      </div>`;
+    return;
+  }
+  grid.innerHTML = rooms.map(r => `
+    <div class="pick-card ${state.quartoId===r.id?'selected':''}" data-id="${r.id}">
+      <div class="pick-photo" data-room-id="${r.id}" style="background-image: url('${imgForRoom(r)}'); cursor: zoom-in;"></div>
+      <div class="pick-body">
+        <h4>Quarto ${r.numero} · ${r.tipo}</h4>
+        <div style="font-size:0.85rem; color:var(--cinza-texto);">Até ${r.capacidade} pessoas · ${r.amenities.slice(0,3).join(' · ')}</div>
+        <div class="pick-info">
+          <span style="font-size:0.85rem; color:var(--cinza-texto);">${state.diarias} ${state.diarias===1?'diária':'diárias'}</span>
+          <span class="pick-price">${DB.formatBRL(r.preco)} <small style="font-size:0.7rem; color:var(--cinza-texto); font-family:'Inter',sans-serif;">/ diária</small></span>
+        </div>
+      </div>
+    </div>
+  `).join('');
+  grid.querySelectorAll('.pick-card').forEach(card => {
+    card.addEventListener('click', () => {
+      state.quartoId = card.dataset.id;
+      grid.querySelectorAll('.pick-card').forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+      updateSummary();
+    });
+  });
+  if (preQuarto && rooms.find(r => r.id === preQuarto)) {
+    state.quartoId = preQuarto;
+    const card = grid.querySelector(`[data-id="${preQuarto}"]`);
+    if (card) { card.classList.add('selected'); updateSummary(); }
+  }
+}
+
+function step2Valid(){
+  clearAllErrors();
+  if (!state.quartoId) { document.getElementById('errStep2').classList.add('show'); return false; }
+  return true;
+}
+
+const isCpfValid = cpf => /^\d{3}\.?\d{3}\.?\d{3}-?\d{2}$/.test(cpf);
+const isEmailValid = e => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
+const isPhoneValid = t => /^\(?\d{2}\)?\s?\d{4,5}-?\d{4}$/.test(t);
+
+function step3Valid(){
+  clearAllErrors();
+  state.cliente.nome = document.getElementById('fNome').value.trim();
+  state.cliente.cpf = document.getElementById('fCpf').value.trim();
+  state.cliente.telefone = document.getElementById('fTelefone').value.trim();
+  state.cliente.email = document.getElementById('fEmail').value.trim();
+  state.cliente.obs = document.getElementById('fObs').value.trim();
+  let ok = true;
+  if (state.cliente.nome.split(' ').length < 2) { showError('errNome'); ok = false; }
+  if (!isCpfValid(state.cliente.cpf)) { showError('errCpf'); ok = false; }
+  if (!isPhoneValid(state.cliente.telefone)) { showError('errTel'); ok = false; }
+  if (!isEmailValid(state.cliente.email)) { showError('errEmail'); ok = false; }
+  return ok;
+}
+
+/* Máscaras simples */
+document.getElementById('fCpf').addEventListener('input', e => {
+  let v = e.target.value.replace(/\D/g, '').slice(0, 11);
+  v = v.replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+  e.target.value = v;
+});
+document.getElementById('fTelefone').addEventListener('input', e => {
+  let v = e.target.value.replace(/\D/g, '').slice(0, 11);
+  if (v.length > 6) v = v.replace(/(\d{2})(\d{5})(\d)/, '($1) $2-$3').replace(/(\d{2})(\d{4})(\d)/, '($1) $2-$3');
+  else if (v.length > 2) v = v.replace(/(\d{2})(\d)/, '($1) $2');
+  e.target.value = v;
+});
+
+function updateSummary(){
+  const room = state.quartoId ? DB.room(state.quartoId) : null;
+  const sumStay = document.getElementById('sumStay');
+  const sumRows = document.getElementById('sumRows');
+  const sumPhoto = document.getElementById('sumPhoto');
+
+  if (state.entrada && state.saida && state.diarias > 0) {
+    sumStay.textContent = `${DB.formatDate(state.entrada)} → ${DB.formatDate(state.saida)} · ${state.diarias} ${state.diarias===1?'diária':'diárias'}`;
+    if (room) {
+      sumPhoto.style.backgroundImage = `url('${imgForRoom(room)}')`;
+      document.getElementById('sumTitle').textContent = `Quarto ${room.numero} · ${room.tipo}`;
+      document.getElementById('sumRoom').textContent = `${room.numero} · ${room.tipo}`;
+    } else {
+      document.getElementById('sumTitle').textContent = 'Sua reserva';
+    }
+    document.getElementById('sumDates').textContent = `${DB.formatDate(state.entrada)} → ${DB.formatDate(state.saida)}`;
+    document.getElementById('sumNights').textContent = state.diarias;
+    document.getElementById('sumGuests').textContent = state.hospedes;
+    if (room) {
+      const sub = room.preco * state.diarias;
+      const desc = state.pagamento === 'pix' ? sub * 0.05 : 0;
+      document.getElementById('sumSub').textContent = DB.formatBRL(sub);
+      document.getElementById('sumDiscRow').style.display = desc > 0 ? '' : 'none';
+      document.getElementById('sumDisc').textContent = '− ' + DB.formatBRL(desc);
+      document.getElementById('sumTotal').textContent = DB.formatBRL(sub - desc);
+      state.total = sub; state.desconto = desc; state.totalFinal = sub - desc;
+      sumRows.style.display = '';
+    } else {
+      sumRows.style.display = 'none';
+    }
+  } else {
+    sumRows.style.display = 'none';
+    sumStay.textContent = 'Selecione as datas para começar';
+  }
+}
+
+document.querySelectorAll('.pay-opt').forEach(opt => {
+  opt.addEventListener('click', () => {
+    document.querySelectorAll('.pay-opt').forEach(o => o.classList.remove('selected'));
+    opt.classList.add('selected');
+    state.pagamento = opt.dataset.pay;
+    updateSummary();
+    document.getElementById('errPay').classList.remove('show');
+  });
+});
+
+function step4Valid(){
+  if (!state.pagamento) { document.getElementById('errPay').classList.add('show'); return false; }
+  return true;
+}
+
+function confirmar(){
+  const cli = DB.findOrCreateClient(state.cliente);
+  const room = DB.room(state.quartoId);
+  const valorPago = state.pagamento === 'dinheiro' ? 0 : state.totalFinal;
+  const reserva = {
+    clienteId: cli.id,
+    quartoId: room.id,
+    entrada: state.entrada, saida: state.saida,
+    diarias: state.diarias, hospedes: state.hospedes,
+    valorDiaria: room.preco,
+    valorTotal: state.totalFinal,
+    valorPago: valorPago,
+    valorRestante: state.totalFinal - valorPago,
+    formaPagamento: state.pagamento,
+    statusPagamento: valorPago === state.totalFinal ? 'pago' : 'pendente',
+    statusReserva: valorPago === state.totalFinal ? 'confirmada' : 'pendente',
+    origem: 'online',
+    observacoes: state.cliente.obs,
+  };
+  const created = DB.saveReservation(reserva);
+  if (valorPago > 0) DB.addPayment({ reservaId: created.id, valor: valorPago, forma: state.pagamento });
+  document.getElementById('confirmCode').textContent = created.codigo;
+  show(5);
+}
+
+document.getElementById('btnNext').addEventListener('click', () => {
+  if (state.step === 1) { if (step1Valid()) { renderRooms(); show(2); } }
+  else if (state.step === 2) { if (step2Valid()) show(3); }
+  else if (state.step === 3) { if (step3Valid()) { updateSummary(); show(4); } }
+  else if (state.step === 4) { if (step4Valid()) confirmar(); }
+});
+document.getElementById('btnBack').addEventListener('click', () => {
+  if (state.step > 1) show(state.step - 1);
+});
+</script>
+</body>
+</html>

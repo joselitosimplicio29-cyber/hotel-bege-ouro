@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quartos — Hotel Bege Ouro</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .page-header {
+      padding: 200px 0 110px;
+      background: linear-gradient(rgba(26,19,13,0.78), rgba(60,40,25,0.7)),
+                  url('https://images.unsplash.com/photo-1611892440504-42a792e24d32?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80') center/cover;
+      color: var(--creme);
+      text-align: center;
+    }
+    .page-header h1 { color: var(--creme); }
+    .page-header h1 em { color: var(--dourado-claro); font-style: italic; }
+    .page-header .section-eyebrow { color: var(--dourado-claro); }
+    .page-header .section-eyebrow::before, .page-header .section-eyebrow::after { background: var(--dourado-claro); }
+    .page-header p { color: rgba(250, 246, 238, 0.85); }
+
+    .room-row { display: grid; grid-template-columns: 1.1fr 1fr; gap: 70px; align-items: center; margin-bottom: 100px; }
+    .room-row:nth-child(even) .room-row-photo { order: 2; }
+    .room-row-photo { aspect-ratio: 4/3; background-size: cover; background-position: center; box-shadow: var(--sombra-forte); position: relative; }
+    .room-row-photo .badge {
+      position: absolute; top: 20px; left: 20px;
+      background: rgba(26,19,13,0.85); color: var(--dourado-claro);
+      padding: 8px 18px; font-size: 0.72rem; letter-spacing: 0.22em; text-transform: uppercase; font-weight: 600;
+    }
+    .room-row h2 { font-size: 2.2rem; }
+    .room-row .meta-line { display:flex; gap: 26px; color: var(--cinza-texto); font-size: 0.95rem; margin: 16px 0 24px; flex-wrap: wrap; }
+    .room-row .meta-line span { display:inline-flex; align-items:center; gap:6px; }
+    .room-row .amen-list { display:flex; flex-wrap:wrap; gap:8px; margin: 24px 0 30px; }
+    .room-row .price-line { display:flex; align-items:baseline; justify-content:space-between; padding-top: 26px; border-top: 1px solid var(--cinza-borda); }
+    .room-row .price-line .price { font-size: 2.2rem; }
+
+    @media(max-width: 880px){
+      .room-row { grid-template-columns: 1fr; gap: 30px; margin-bottom: 60px; }
+      .room-row:nth-child(even) .room-row-photo { order: 0; }
+      .page-header { padding: 150px 0 80px; }
+    }
+  </style>
+</head>
+<body>
+
+<header class="page-header">
+  <div class="container">
+    <span class="section-eyebrow">Acomodações</span>
+    <h1 style="margin-top:18px;">Quartos para cada <em>tipo de viagem</em>.</h1>
+    <p style="max-width:640px; margin: 22px auto 0; font-size: 1.1rem;">Categorias diferentes com o mesmo padrão de elegância. Todos com enxoval premium, ar-condicionado e Wi-Fi de alta velocidade.</p>
+  </div>
+</header>
+
+<section class="section">
+  <div class="container" id="roomsList"></div>
+</section>
+
+<section class="cta-banner">
+  <div class="container">
+    <h2>Reserve seu <em>quarto preferido</em></h2>
+    <p>Verifique a disponibilidade em tempo real para a data desejada.</p>
+    <a href="reservar.html" class="btn btn-primary">Verificar disponibilidade →</a>
+  </div>
+</section>
+
+<script src="js/db.js"></script>
+<script src="js/site.js"></script>
+<script>
+  SITE.init('quartos');
+
+  const all = DB.rooms();
+  const byTipo = {};
+  all.forEach(r => { if (!byTipo[r.tipo]) byTipo[r.tipo] = r; });
+  const tipos = Object.values(byTipo);
+
+  document.getElementById('roomsList').innerHTML = tipos.map(r => {
+    const cnt = all.filter(x => x.tipo === r.tipo).length;
+    return `
+      <div class="room-row">
+        <div class="room-row-photo" data-room-id="${r.id}" style="background-image: url('${imgForRoom(r)}'); cursor: zoom-in;">
+          <span class="badge">${r.tipo}</span>
+        </div>
+        <div>
+          <span class="section-eyebrow" style="padding: 0; display: inline-block;">${r.tipo}</span>
+          <h2 style="margin-top:14px;">${r.tipo}</h2>
+          <div class="meta-line">
+            <span>👤 Até ${r.capacidade} pessoas</span>
+            <span>✦ ${cnt} ${cnt === 1 ? 'quarto disponível' : 'quartos disponíveis'}</span>
+            <span>★ Premium</span>
+          </div>
+          <p style="color: var(--cinza-texto); line-height: 1.8;">${r.descricao}</p>
+          <div class="amen-list">
+            ${r.amenities.map(a => `<span class="amenity">${a}</span>`).join('')}
+          </div>
+          <div class="price-line">
+            <div class="price">${DB.formatBRL(r.preco)} <small>/ diária</small></div>
+            <a href="reservar.html?tipo=${encodeURIComponent(r.tipo)}" class="btn btn-dark btn-sm">Reservar este quarto</a>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+</script>
+</body>
+</html>

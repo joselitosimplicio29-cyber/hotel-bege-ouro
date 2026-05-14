@@ -1,0 +1,58 @@
+═══════════════════════════════════════════════════════════════
+  HOTEL BEGE OURO — INSTRUÇÕES DAS FOTOS
+═══════════════════════════════════════════════════════════════
+
+⚠ ESTA PASTA NÃO É MAIS USADA.
+
+As fotos do site agora ficam todas dentro da pasta "img"
+(no mesmo nível desta pasta).
+
+Caminho:  C:\Users\Josel\Documents\hotel-bege-ouro\img\
+
+──────────────────────────────────────────────────────────────
+  SALVE AS 3 FOTOS NOVAS NA PASTA img\ COM ESTES NOMES
+──────────────────────────────────────────────────────────────
+
+  Foto que você enviou         →  Nome do arquivo (em img/)
+
+  Quarto com 2 camas solteiro  →  quarto_solteiro.png
+  Banheiro com pia + espelho   →  banheiro_1.png
+  Banheiro com box do chuveiro →  banheiro_2.png
+
+──────────────────────────────────────────────────────────────
+  ONDE CADA FOTO VAI APARECER
+──────────────────────────────────────────────────────────────
+
+  quarto_solteiro.png  →  Quarto 103 (Standard)
+                          Home (card de quarto)
+                          Galeria (aba "Quartos")
+                          Página de reserva (escolha de quarto)
+                          Carrossel do quarto (foto 1 de 3)
+
+  banheiro_1.png       →  Carrossel do quarto (foto 2 de 3)
+                          Galeria (aba "Quartos")
+
+  banheiro_2.png       →  Carrossel do quarto (foto 3 de 3)
+                          Galeria (aba "Quartos")
+
+──────────────────────────────────────────────────────────────
+  COMO FAZER NA PRÁTICA
+──────────────────────────────────────────────────────────────
+
+1) Abra o Explorador de Arquivos
+2) Vá em: C:\Users\Josel\Documents\hotel-bege-ouro\img\
+3) Cole as 3 fotos lá
+4) Renomeie cada uma com o nome exato acima
+   (importante: tudo minúsculo, com underscore _ no meio)
+5) Recarregue o site (Ctrl + F5 no navegador)
+
+──────────────────────────────────────────────────────────────
+  FORMATO E TAMANHO RECOMENDADOS
+──────────────────────────────────────────────────────────────
+
+  • Formato: PNG ou JPG (qualquer um funciona)
+  • Largura: 1000 a 1600 pixels
+  • Tamanho do arquivo: até 800 KB (otimize em tinypng.com
+    se ficar muito grande para acelerar o site)
+
+═══════════════════════════════════════════════════════════════

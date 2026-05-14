@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — Hotel Bege Ouro</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/admin.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sb-logo"><span class="mark">B</span>Bege<span> Ouro</span></div>
+
+    <div class="sb-user">
+      <span class="name" id="userName">—</span>
+      <span class="role" id="userRole">—</span>
+    </div>
+
+    <nav class="sb-nav">
+      <h5>Operação</h5>
+      <a data-view="inicio" class="active"><span class="ico">⌂</span> Início</a>
+      <a data-view="mapa"><span class="ico">▦</span> Mapa de quartos</a>
+      <a data-view="reservas"><span class="ico">✉</span> Reservas</a>
+      <a data-view="checkin"><span class="ico">✓</span> Check-in / Check-out</a>
+      <a data-view="consumo"><span class="ico">☕</span> Consumo</a>
+
+      <h5>Cadastros</h5>
+      <a data-view="quartos"><span class="ico">⌗</span> Quartos</a>
+      <a data-view="clientes"><span class="ico">☺</span> Clientes</a>
+
+      <h5>Financeiro</h5>
+      <a data-view="pagamentos"><span class="ico">$</span> Pagamentos</a>
+      <a data-view="relatorios"><span class="ico">↗</span> Relatórios</a>
+    </nav>
+
+    <div class="sb-foot">
+      <a href="../index.html">↗ Ver site público</a>
+      <a href="#" id="logoutBtn">⏻ Sair</a>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <div class="topbar">
+      <div style="display:flex; align-items:center; gap:14px;">
+        <button id="sbToggle" style="display:none; background:none; border:0; font-size:1.5rem; cursor:pointer;" aria-label="Menu">☰</button>
+        <h1 id="viewTitle">Início</h1>
+      </div>
+      <div class="actions" id="topActions"></div>
+    </div>
+
+    <div class="content" id="content"></div>
+  </main>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <div class="modal-head">
+      <h2 id="modalTitle">—</h2>
+      <button class="close" id="modalClose">×</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-foot" id="modalFoot"></div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script src="../js/db.js"></script>
+<script src="../js/pdf.js"></script>
+<script src="../js/admin.js"></script>
+</body>
+</html>

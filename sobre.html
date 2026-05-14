@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sobre — Hotel Bege Ouro</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .page-header {
+      padding: 200px 0 110px;
+      background: linear-gradient(rgba(26,19,13,0.78), rgba(60,40,25,0.7)),
+                  url('https://images.unsplash.com/photo-1564501049412-61c2a3083791?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80') center/cover;
+      color: var(--creme);
+      text-align: center;
+    }
+    .page-header h1 { color: var(--creme); }
+    .page-header h1 em { color: var(--dourado-claro); font-style: italic; }
+    .page-header .section-eyebrow { color: var(--dourado-claro); }
+    .page-header .section-eyebrow::before, .page-header .section-eyebrow::after { background: var(--dourado-claro); }
+    .page-header p { color: rgba(250, 246, 238, 0.85); }
+
+    .story-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 90px; align-items: center; margin-bottom: 100px; }
+    .story-grid:nth-child(even) .story-photo { order: 2; }
+    .story-photo { aspect-ratio: 5/6; background-size: cover; background-position: center; box-shadow: var(--sombra-forte); }
+
+    .values { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; }
+    .value-card { padding: 44px 32px; border: 1px solid var(--cinza-borda); background: var(--branco); transition: var(--transicao); }
+    .value-card:hover { border-color: var(--dourado); transform: translateY(-6px); box-shadow: var(--sombra); }
+    .value-card .ico { font-size: 1.8rem; color: var(--dourado-deep); margin-bottom: 14px; }
+    .value-card h3 { font-size: 1.25rem; margin-bottom: 14px; color: var(--marrom); }
+    .value-card p { color: var(--cinza-texto); line-height: 1.75; }
+
+    @media(max-width: 880px){
+      .story-grid, .values { grid-template-columns: 1fr; gap: 40px; }
+      .story-grid:nth-child(even) .story-photo { order: 0; }
+      .page-header { padding: 150px 0 80px; }
+    }
+  </style>
+</head>
+<body>
+
+<header class="page-header">
+  <div class="container">
+    <span class="section-eyebrow">Sobre nós</span>
+    <h1 style="margin-top:18px;">Uma história feita de <em>hospitalidade</em>.</h1>
+    <p style="max-width:640px; margin: 22px auto 0; font-size: 1.1rem;">Mais de uma década recebendo bem. Conheça o que nos torna diferentes.</p>
+  </div>
+</header>
+
+<section class="section">
+  <div class="container">
+    <div class="story-grid">
+      <div class="story-photo" id="photo1"></div>
+      <div>
+        <span class="section-eyebrow" style="padding: 0; display: inline-block;">Nossa essência</span>
+        <h2 style="margin: 16px 0 22px;">Mais do que hospedar — receber bem.</h2>
+        <p style="color:var(--cinza-texto); margin-bottom:18px;">Há mais de uma década, o Hotel Bege Ouro foi pensado para ser um refúgio. Um lugar onde a hospitalidade clássica encontra o conforto contemporâneo, onde cada hóspede é recebido como família.</p>
+        <p style="color:var(--cinza-texto);">Da arquitetura à gastronomia, todos os detalhes foram cuidadosamente escolhidos para oferecer uma experiência inesquecível, marcada por elegância sem ostentação.</p>
+      </div>
+    </div>
+    <div class="story-grid">
+      <div class="story-photo" id="photo2"></div>
+      <div>
+        <span class="section-eyebrow" style="padding: 0; display: inline-block;">Nossa equipe</span>
+        <h2 style="margin: 16px 0 22px;">Pessoas que fazem a diferença.</h2>
+        <p style="color:var(--cinza-texto); margin-bottom:18px;">O coração do Bege Ouro é a equipe. Recepcionistas atentos, camareiras dedicadas, cozinheiros apaixonados e uma gerência que conhece cada hóspede pelo nome.</p>
+        <p style="color:var(--cinza-texto);">É essa combinação de competência e calor humano que transforma uma simples estadia em uma lembrança preciosa.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="stats-strip">
+  <div class="container">
+    <div class="stats-strip-grid">
+      <div><span class="num">10+</span><span class="lbl">Anos de história</span></div>
+      <div><span class="num">9</span><span class="lbl">Quartos exclusivos</span></div>
+      <div><span class="num">4.9</span><span class="lbl">Avaliação média</span></div>
+      <div><span class="num">98%</span><span class="lbl">Hóspedes satisfeitos</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="section-head">
+      <span class="section-eyebrow">Nossos valores</span>
+      <h2>O que nos guia</h2>
+    </div>
+    <div class="values">
+      <div class="value-card">
+        <div class="ico">✦</div>
+        <h3>Excelência</h3>
+        <p>Buscamos a perfeição nos detalhes que tornam sua estadia memorável — do enxoval impecável ao café da manhã farto.</p>
+      </div>
+      <div class="value-card">
+        <div class="ico">✿</div>
+        <h3>Hospitalidade</h3>
+        <p>Receber bem é arte. Cada gesto, cada palavra é pensada para fazer você se sentir em casa, longe de casa.</p>
+      </div>
+      <div class="value-card">
+        <div class="ico">⌬</div>
+        <h3>Discrição</h3>
+        <p>Sua privacidade e tranquilidade são sagradas. Servimos com presença atenta, mas sempre respeitosa.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="cta-banner">
+  <div class="container">
+    <h2>Venha viver a experiência <em>Bege Ouro</em></h2>
+    <p>Conheça pessoalmente o que tornou esse hotel referência em hospitalidade.</p>
+    <a href="reservar.html" class="btn btn-primary">Reservar agora →</a>
+  </div>
+</section>
+
+<script src="js/db.js"></script>
+<script src="js/site.js"></script>
+<script>
+  SITE.init('sobre');
+  document.getElementById('photo1').style.backgroundImage = `url('${IMG.lobby}')`;
+  document.getElementById('photo2').style.backgroundImage = `url('${IMG.equipe}')`;
+</script>
+</body>
+</html>
