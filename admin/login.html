@@ -38,17 +38,24 @@
   </div>
 </div>
 
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script src="../js/supabase-config.js"></script>
 <script src="../js/db.js"></script>
 <script>
-  document.getElementById('loginForm').addEventListener('submit', e => {
+  document.getElementById('loginForm').addEventListener('submit', async e => {
     e.preventDefault();
+    const btn = e.target.querySelector('button');
+    btn.textContent = 'Entrando...';
+    btn.disabled = true;
     const email = document.getElementById('email').value.trim();
     const senha = document.getElementById('senha').value;
-    const user = DB.login(email, senha);
+    const user = await DB.login(email, senha);
     const err = document.getElementById('errBox');
     if (!user) {
       err.textContent = 'E-mail ou senha incorretos.';
       err.style.display = 'block';
+      btn.textContent = 'Entrar';
+      btn.disabled = false;
       return;
     }
     location.href = 'dashboard.html';
