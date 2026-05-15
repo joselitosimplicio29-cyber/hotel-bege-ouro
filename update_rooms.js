@@ -19,7 +19,7 @@ async function main() {
       numero: '101',
       tipo: 'Individual',
       capacidade: 1,
-      preco: 150.00,
+      preco: 190.00,
       status: 'disponivel',
       descricao: 'Quarto aconchegante com cama de solteiro, ideal para viajantes solo. Wi-Fi, TV e ar-condicionado inclusos.',
       amenities: ['Wi-Fi', 'Smart TV', 'Ar-cond.']
@@ -29,7 +29,7 @@ async function main() {
       numero: '102',
       tipo: 'Casal Duplo',
       capacidade: 2,
-      preco: 200.00,
+      preco: 250.00,
       status: 'disponivel',
       descricao: 'Quarto espaçoso com cama de casal, ideal para casais. Ar-condicionado, TV e frigobar inclusos.',
       amenities: ['Wi-Fi', 'Smart TV', 'Ar-cond.', 'Frigobar']
@@ -39,7 +39,7 @@ async function main() {
       numero: '103',
       tipo: 'Triplo',
       capacidade: 3,
-      preco: 270.00,
+      preco: 290.00,
       status: 'disponivel',
       descricao: 'Quarto amplo com três camas, ideal para grupos e famílias. Wi-Fi, TV 32", ar-condicionado e frigobar inclusos.',
       amenities: ['Wi-Fi', 'TV 32"', 'Ar-cond.', 'Frigobar']
