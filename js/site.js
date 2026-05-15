@@ -63,7 +63,7 @@ const HOTEL_INFO = {
   instagram: 'https://instagram.com/hotelbegeouro',
   email: 'begeourohotel@hotmail.com',
   telefone: '(74) 98139-9221',
-  endereco: 'Rua das Acácias, 1000 — Centro · Bahia',
+  endereco: 'Praça da Rodoviária, s/n — Centro, Ourolândia, Bahia, CEP 44.718-000',
 };
 
 const SITE = {

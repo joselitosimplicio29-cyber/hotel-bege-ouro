@@ -1185,3 +1185,10 @@ textarea { resize: vertical; min-height: 100px; }
   .modal-content img { max-width: 96vw; max-height: 80vh; }
   .modal-close { top: 12px; right: 18px; font-size: 32px; }
 }
+/* ===== VIEW TRANSITIONS ===== */
+::view-transition-group(*),
+::view-transition-old(*),
+::view-transition-new(*) {
+  animation-duration: 0.25s;
+  animation-timing-function: cubic-bezier(0.19, 1, 0.22, 1);
+}
