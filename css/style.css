@@ -424,7 +424,7 @@ img:hover { filter: sepia(0) contrast(1) saturate(1); }
 /* ===== ROOM CARDS ===== */
 .rooms-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   gap: 32px;
 }
 .room-card {

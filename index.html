@@ -186,9 +186,9 @@
   document.getElementById('ava2').style.backgroundImage = `url('${IMG.avatar2}')`;
   document.getElementById('ava3').style.backgroundImage = `url('${IMG.avatar3}')`;
 
-  /* 3 quartos em destaque */
+  /* quartos em destaque */
   const grid = document.getElementById('roomsHomeGrid');
-  const featRooms = ['q301', 'q201', 'q101'].map(id => DB.room(id)).filter(Boolean);
+  const featRooms = ['q301', 'q201', 'q104', 'q101'].map(id => DB.room(id)).filter(Boolean);
   grid.innerHTML = featRooms.map(r => `
     <article class="room-card">
       ${window.renderInlineCarousel(r, 'room-tag')}
