@@ -360,7 +360,7 @@ function roomGallery(roomId) {
   }
   
   if (room && room.tipo === 'Triplo') {
-    return [primary, IMG.quartoTriplo2, IMG.quartoTriploTV, IMG.quartoTriploBanheiro, IMG.quartoTriploChuveiro];
+    return [primary];
   }
 
   return [primary, IMG.banheiroPia];
