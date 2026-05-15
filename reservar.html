@@ -113,46 +113,38 @@
 
           <!-- Step 4 -->
           <div class="step-panel" data-panel="4" style="display:none;">
-            <h3 style="margin-bottom:8px;">Forma de pagamento</h3>
-            <p style="color:var(--cinza-texto); margin-bottom:24px;">Selecione como deseja efetuar o pagamento. Reservas com Pix têm 5% de desconto.</p>
-            <div class="payment-options" id="payOpts">
-              <div class="pay-opt" data-pay="pix">
-                <div class="ico">⚡</div>
-                <span>Pix</span>
-                <small style="display:block; color:var(--dourado-deep); font-weight:600; margin-top:6px;">5% off</small>
-              </div>
-              <div class="pay-opt" data-pay="cartao">
-                <div class="ico">💳</div>
-                <span>Cartão</span>
-                <small style="display:block; color:var(--cinza-texto); margin-top:6px;">crédito/débito</small>
-              </div>
-              <div class="pay-opt" data-pay="dinheiro">
-                <div class="ico">💵</div>
-                <span>Dinheiro</span>
-                <small style="display:block; color:var(--cinza-texto); margin-top:6px;">no check-in</small>
-              </div>
-              <div class="pay-opt" data-pay="outro">
-                <div class="ico">✦</div>
-                <span>Outro</span>
-                <small style="display:block; color:var(--cinza-texto); margin-top:6px;">consultar</small>
+            <h3 style="margin-bottom:8px;">Confirme sua reserva</h3>
+            <p style="color:var(--cinza-texto); margin-bottom:24px;">Revise os dados abaixo. Ao clicar em <strong>"Finalizar Reserva"</strong>, você será redirecionado ao WhatsApp para confirmar o pagamento com nossa equipe.</p>
+            <div id="step4Resumo" style="background:var(--creme); padding: 24px; border-radius: 8px; border-left: 4px solid var(--dourado-escuro);">
+              <div style="display:flex; flex-direction:column; gap:12px; font-size:0.95rem;">
+                <div style="display:flex; justify-content:space-between;"><span style="color:var(--cinza-texto);">Nome</span> <strong id="rs4Nome">—</strong></div>
+                <div style="display:flex; justify-content:space-between;"><span style="color:var(--cinza-texto);">Telefone</span> <strong id="rs4Tel">—</strong></div>
+                <div style="display:flex; justify-content:space-between;"><span style="color:var(--cinza-texto);">Quarto</span> <strong id="rs4Quarto">—</strong></div>
+                <div style="display:flex; justify-content:space-between;"><span style="color:var(--cinza-texto);">Pessoas</span> <strong id="rs4Pessoas">—</strong></div>
+                <div style="display:flex; justify-content:space-between;"><span style="color:var(--cinza-texto);">Entrada</span> <strong id="rs4Entrada">—</strong></div>
+                <div style="display:flex; justify-content:space-between;"><span style="color:var(--cinza-texto);">Saída</span> <strong id="rs4Saida">—</strong></div>
+                <div style="display:flex; justify-content:space-between; border-top: 1px solid var(--cinza-borda); padding-top:12px; margin-top:4px;"><span style="color:var(--cinza-texto);">Valor total</span> <strong id="rs4Total" style="color:var(--dourado-deep); font-size:1.1rem;">—</strong></div>
               </div>
             </div>
-            <div class="field-error" id="errPay" style="margin-top:14px;">Escolha uma forma de pagamento.</div>
+            <div style="margin-top:20px; padding:14px; background:#f0fdf4; border-radius:8px; border: 1px solid #bbf7d0; display:flex; align-items:center; gap:12px;">
+              <span style="font-size:1.6rem;">💬</span>
+              <p style="color:#166534; font-size:0.88rem; margin:0;">Após clicar em <strong>"Finalizar Reserva"</strong>, sua reserva será salva e você será redirecionado ao WhatsApp com os detalhes completos para confirmar o pagamento com nossa equipe.</p>
+            </div>
           </div>
 
           <!-- Step 5 -->
           <div class="step-panel" data-panel="5" style="display:none;">
             <div class="confirm-block">
               <div class="confirm-icon">✓</div>
-              <h2 style="margin-bottom:12px;">Reserva confirmada!</h2>
+              <h2 style="margin-bottom:12px;">Reserva registrada!</h2>
               <p style="color:var(--cinza-texto);">Sua reserva foi registrada com sucesso. Anote o código abaixo:</p>
               <div class="code-box" id="confirmCode">—</div>
-              <p style="color:var(--cinza-texto);">Enviamos os detalhes para o seu e-mail. Em caso de dúvidas:</p>
-              <p style="margin-top:8px;"><strong>📞 (74) 98139-9221</strong> &nbsp;·&nbsp; <strong>begeourohotel@hotmail.com</strong></p>
-              <div style="margin-top:36px; display:flex; gap:14px; justify-content:center; flex-wrap:wrap;">
-                <a href="https://wa.me/5574981399221" target="_blank" class="btn btn-primary">💬 Falar no WhatsApp</a>
+              <p style="color:var(--cinza-texto); margin-top:16px;">O WhatsApp já foi aberto com os detalhes completos. Se não abriu automaticamente, clique no botão abaixo:</p>
+              <div style="margin-top:28px; display:flex; gap:14px; justify-content:center; flex-wrap:wrap;">
+                <a id="waBtnFinal" href="#" target="_blank" class="btn btn-primary" style="background: #25D366; border-color:#25D366;">💬 Abrir WhatsApp</a>
                 <a href="index.html" class="btn btn-dark">Voltar ao início</a>
               </div>
+              <p style="color:var(--cinza-texto); font-size:0.83rem; margin-top:24px;">Dúvidas? <strong>📞 (74) 98139-9221</strong> &nbsp;·&nbsp; <strong>begeourohotel@hotmail.com</strong></p>
             </div>
           </div>
         </div>
@@ -246,7 +238,7 @@ function show(step){
   });
   document.getElementById('btnBack').style.display = step > 1 && step < 5 ? '' : 'none';
   const next = document.getElementById('btnNext');
-  if (step === 4) next.textContent = 'Confirmar reserva ✓';
+  if (step === 4) next.textContent = 'Finalizar Reserva 💬';
   else if (step === 5) next.style.display = 'none';
   else next.textContent = 'Próximo →';
   
@@ -411,19 +403,34 @@ function updateSummary(){
   }
 }
 
-document.querySelectorAll('.pay-opt').forEach(opt => {
-  opt.addEventListener('click', () => {
-    document.querySelectorAll('.pay-opt').forEach(o => o.classList.remove('selected'));
-    opt.classList.add('selected');
-    state.pagamento = opt.dataset.pay;
-    updateSummary();
-    document.getElementById('errPay').classList.remove('show');
-  });
-});
+/* Preenche o resumo do step 4 */
+function preencheStep4() {
+  const room = state.quartoId ? DB.room(state.quartoId) : null;
+  document.getElementById('rs4Nome').textContent    = state.cliente.nome || '—';
+  document.getElementById('rs4Tel').textContent     = state.cliente.telefone || '—';
+  document.getElementById('rs4Quarto').textContent  = room ? `Quarto ${room.numero} · ${room.tipo}` : '—';
+  document.getElementById('rs4Pessoas').textContent = state.hospedes;
+  document.getElementById('rs4Entrada').textContent = DB.formatDate(state.entrada);
+  document.getElementById('rs4Saida').textContent   = DB.formatDate(state.saida);
+  document.getElementById('rs4Total').textContent   = DB.formatBRL(state.totalFinal);
+}
 
 function step4Valid(){
-  if (!state.pagamento) { document.getElementById('errPay').classList.add('show'); return false; }
-  return true;
+  return true; // pagamento é confirmado via WhatsApp, sempre válido
+}
+
+function gerarLinkWhatsApp(codigo, room) {
+  const tel = '5574981399221';
+  const msg = `Olá, gostaria de confirmar minha reserva.\n\n` +
+    `*Código:* ${codigo}\n` +
+    `*Nome:* ${state.cliente.nome}\n` +
+    `*Telefone:* ${state.cliente.telefone}\n` +
+    `*Quarto:* Quarto ${room.numero} · ${room.tipo}\n` +
+    `*Pessoas:* ${state.hospedes}\n` +
+    `*Entrada:* ${DB.formatDate(state.entrada)}\n` +
+    `*Saída:* ${DB.formatDate(state.saida)}\n` +
+    `*Valor total:* ${DB.formatBRL(state.totalFinal)}`;
+  return `https://wa.me/${tel}?text=${encodeURIComponent(msg)}`;
 }
 
 async function confirmar(){
@@ -433,7 +440,6 @@ async function confirmar(){
   try {
     const cli = await DB.findOrCreateClient(state.cliente);
     const room = DB.room(state.quartoId);
-    const valorPago = state.pagamento === 'dinheiro' ? 0 : state.totalFinal;
     const reserva = {
       clienteId: cli.id,
       quartoId: room.id,
@@ -441,29 +447,33 @@ async function confirmar(){
       diarias: state.diarias, hospedes: state.hospedes,
       valorDiaria: room.preco,
       valorTotal: state.totalFinal,
-      valorPago: valorPago,
-      valorRestante: state.totalFinal - valorPago,
-      formaPagamento: state.pagamento,
-      statusPagamento: valorPago === state.totalFinal ? 'pago' : 'pendente',
-      statusReserva: valorPago === state.totalFinal ? 'confirmada' : 'pendente',
+      valorPago: 0,
+      valorRestante: state.totalFinal,
+      formaPagamento: 'whatsapp',
+      statusPagamento: 'pendente',
+      statusReserva: 'pendente',
       origem: 'online',
       observacoes: state.cliente.obs,
     };
     const created = await DB.saveReservation(reserva);
-    if (valorPago > 0) await DB.addPayment({ reservaId: created.id, valor: valorPago, forma: state.pagamento });
+    const waLink = gerarLinkWhatsApp(created.codigo, room);
     document.getElementById('confirmCode').textContent = created.codigo;
+    document.getElementById('waBtnFinal').href = waLink;
     show(5);
+    // Redireciona automaticamente após pequeno delay
+    setTimeout(() => { window.open(waLink, '_blank'); }, 600);
   } catch(err) {
     console.error(err);
-    btn.textContent = 'Confirmar reserva ✓';
+    btn.textContent = 'Finalizar Reserva 💬';
     btn.disabled = false;
+    alert('Erro ao registrar reserva. Tente novamente.');
   }
 }
 
 document.getElementById('btnNext').addEventListener('click', async () => {
   if (state.step === 1) { if (step1Valid()) { renderRooms(); show(2); } }
   else if (state.step === 2) { if (step2Valid()) show(3); }
-  else if (state.step === 3) { if (step3Valid()) { updateSummary(); show(4); } }
+  else if (state.step === 3) { if (step3Valid()) { updateSummary(); state.totalFinal = state.totalFinal || (DB.room(state.quartoId)?.preco * state.diarias); preencheStep4(); show(4); } }
   else if (state.step === 4) { if (step4Valid()) await confirmar(); }
 });
 document.getElementById('btnBack').addEventListener('click', () => {

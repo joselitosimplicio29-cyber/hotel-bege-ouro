@@ -14,6 +14,22 @@ const App = {
   },
   can(view) { return this.perms[this.user?.perfil]?.includes(view); },
 
+  /* ===== Helpers de Label ===== */
+  statusLabel(s) {
+    const map = {
+      pendente:       'Aguardando pgto',
+      confirmada:     'Pagamento confirmado',
+      em_hospedagem:  'Em hospedagem',
+      finalizada:     'Reserva concluída',
+      cancelada:      'Cancelada',
+    };
+    return map[s] || s.replace('_',' ');
+  },
+  statusPagLabel(s) {
+    const map = { pendente: 'Pendente', parcial: 'Parcial', pago: 'Pago' };
+    return map[s] || s;
+  },
+
   async init() {
     document.getElementById('content').innerHTML = '<div style="padding:60px; text-align:center; color:var(--cinza-texto);">Carregando...</div>';
     await DB.load();
@@ -139,13 +155,14 @@ const App = {
           ${list.map(r => {
             const cli = DB.client(r.clienteId);
             const room = DB.room(r.quartoId);
+            const isOnlinePendente = r.origem === 'online' && r.statusReserva === 'pendente';
             return `
-              <tr style="cursor:pointer" onclick="App.openReservaDetail('${r.id}')">
-                <td><strong>${r.codigo}</strong></td>
+              <tr style="cursor:pointer${isOnlinePendente ? '; background: #fffbeb;' : ''}" onclick="App.openReservaDetail('${r.id}')">
+                <td><strong>${r.codigo}</strong>${isOnlinePendente ? ' <span style="font-size:0.7rem; background:#f59e0b; color:#fff; padding:2px 6px; border-radius:4px; vertical-align:middle;">ONLINE</span>' : ''}</td>
                 <td>${cli?.nome || '—'}</td>
                 <td>${room?.numero || '—'}</td>
                 <td>${DB.formatDate(r.entrada)} → ${DB.formatDate(r.saida)}</td>
-                <td><span class="pill pill-${r.statusReserva}">${r.statusReserva.replace('_',' ')}</span></td>
+                <td><span class="pill pill-${r.statusReserva}">${this.statusLabel(r.statusReserva)}</span></td>
               </tr>`;
           }).join('')}
         </tbody>
@@ -320,18 +337,19 @@ const App = {
           ${list.map(r => {
             const cli = DB.client(r.clienteId);
             const room = DB.room(r.quartoId);
+            const isOnlinePendente = r.origem === 'online' && r.statusReserva === 'pendente';
             return `
-              <tr>
-                <td><strong>${r.codigo}</strong></td>
+              <tr${isOnlinePendente ? ' style="background:#fffbeb;"' : ''}>
+                <td><strong>${r.codigo}</strong>${isOnlinePendente ? ' <span style="font-size:0.68rem; background:#f59e0b; color:#fff; padding:2px 5px; border-radius:4px;">ONLINE</span>' : ''}</td>
                 <td>${cli?.nome || '—'}</td>
                 <td>${room?.numero || '—'}</td>
                 <td>${DB.formatDate(r.entrada)}</td>
                 <td>${DB.formatDate(r.saida)}</td>
                 <td>${DB.formatBRL(r.valorTotal)}</td>
-                <td><span class="pill pill-${r.statusPagamento}">${r.statusPagamento}</span></td>
-                <td><span class="pill pill-${r.statusReserva}">${r.statusReserva.replace('_',' ')}</span></td>
+                <td><span class="pill pill-${r.statusPagamento}">${this.statusPagLabel(r.statusPagamento)}</span></td>
+                <td><span class="pill pill-${r.statusReserva}">${this.statusLabel(r.statusReserva)}</span></td>
                 <td><span class="pill pill-${r.origem}">${r.origem}</span></td>
-                <td class="actions"><button class="btn btn-outline btn-sm" onclick="App.openReservaDetail('${r.id}')">Ver</button></td>
+                <td class="actions">${isOnlinePendente ? `<button class="btn btn-primary btn-sm" onclick="App.confirmPayment('${r.id}')">&#10003; Confirmar pgto</button>` : ''}<button class="btn btn-outline btn-sm" onclick="App.openReservaDetail('${r.id}')">Ver</button></td>
               </tr>`;
           }).join('')}
         </tbody>
@@ -465,9 +483,9 @@ const App = {
     const pgs = DB.payments(reservaId);
 
     const body = `
-      <div style="margin-bottom: 14px; display: flex; gap: 10px;">
-        <span class="pill pill-${r.statusReserva}">${r.statusReserva.replace('_',' ')}</span>
-        <span class="pill pill-${r.statusPagamento}">Pgto: ${r.statusPagamento}</span>
+      <div style="margin-bottom: 14px; display: flex; gap: 10px; flex-wrap:wrap;">
+        <span class="pill pill-${r.statusReserva}">${this.statusLabel(r.statusReserva)}</span>
+        <span class="pill pill-${r.statusPagamento}">Pgto: ${this.statusPagLabel(r.statusPagamento)}</span>
         <span class="pill pill-${r.origem}">${r.origem}</span>
       </div>
 
@@ -509,13 +527,17 @@ const App = {
 
     let foot = `<button class="btn btn-outline" onclick="App.closeModal()">Fechar</button>`;
     if (r.statusReserva === 'em_hospedagem' || r.statusReserva === 'finalizada') {
-      foot += `<button class="btn btn-outline" onclick="PDF.comprovante('${r.id}')">📄 Comprovante PDF</button>`;
+      foot += `<button class="btn btn-outline" onclick="PDF.comprovante('${r.id}')">&#128196; Comprovante PDF</button>`;
     }
-    if (this.can('pagamentos') && r.valorRestante > 0 && r.statusReserva !== 'cancelada') {
+    // Botão de confirmar pagamento para reservas online pendentes
+    if (r.statusReserva === 'pendente' && r.origem === 'online') {
+      foot += `<button class="btn btn-primary" style="background:#16a34a; border-color:#16a34a;" onclick="App.confirmPayment('${r.id}')">&#10003; Confirmar Pagamento</button>`;
+    }
+    if (this.can('pagamentos') && r.valorRestante > 0 && r.statusReserva !== 'cancelada' && r.statusReserva !== 'pendente') {
       foot += `<button class="btn btn-dark" onclick="App.openPagamento('${r.id}')">+ Lançar pagamento</button>`;
     }
     if (this.can('checkin')) {
-      if (r.statusReserva === 'confirmada' || r.statusReserva === 'pendente') {
+      if (r.statusReserva === 'confirmada') {
         foot += `<button class="btn btn-primary" onclick="App.doCheckIn('${r.id}')">Check-in</button>`;
       } else if (r.statusReserva === 'em_hospedagem') {
         foot += `<button class="btn btn-dark" onclick="App.openConsumoFor('${r.id}')">+ Consumo</button>`;
@@ -526,6 +548,29 @@ const App = {
       }
     }
     this.openModal(`Reserva ${r.codigo}`, body, foot);
+  },
+
+  /* ===== Confirmar Pagamento (reserva online via WhatsApp) ===== */
+  async confirmPayment(reservaId) {
+    const r = DB.reservation(reservaId);
+    if (!r) return;
+    const cli = DB.client(r.clienteId);
+    const nomeCliente = cli?.nome || 'este cliente';
+    if (!confirm(`Confirmar pagamento da reserva ${r.codigo} de ${nomeCliente}?\nValor: ${DB.formatBRL(r.valorTotal)}\n\nEsta ação irá alterar o status para "Pagamento confirmado".`)) return;
+    try {
+      // Atualiza status da reserva para confirmada
+      await DB.saveReservation({ ...r, statusReserva: 'confirmada', statusPagamento: 'pago', valorPago: r.valorTotal, valorRestante: 0 });
+      // Registra o pagamento no financeiro
+      await DB.addPayment({ reservaId, valor: r.valorTotal, forma: r.formaPagamento || 'whatsapp' });
+      this.toast('Pagamento confirmado com sucesso! Reserva atualizada.');
+      this.closeModal();
+      if (this.view === 'reservas') this.view_reservas();
+      else if (this.view === 'inicio') this.view_inicio();
+      else if (this.view === 'pagamentos') this.view_pagamentos();
+    } catch(err) {
+      console.error(err);
+      this.toast('Erro ao confirmar pagamento.', 'error');
+    }
   },
 
   async doCheckIn(id) {
@@ -606,7 +651,7 @@ const App = {
                 <td>${room?.numero}</td>
                 <td>${DB.formatDate(r.entrada)} → ${DB.formatDate(r.saida)}</td>
                 <td>${DB.formatBRL(r.valorTotal)}</td>
-                <td><span class="pill pill-${r.statusReserva}">${r.statusReserva.replace('_',' ')}</span></td>
+                <td><span class="pill pill-${r.statusReserva}">${App.statusLabel(r.statusReserva)}</span></td>
                 <td>${action}</td>
               </tr>`;
           }).join('')}
@@ -906,7 +951,7 @@ const App = {
                       <td>${DB.formatBRL(r.valorTotal)}</td>
                       <td>${DB.formatBRL(r.valorPago)}</td>
                       <td style="color:var(--vermelho); font-weight:600;">${DB.formatBRL(r.valorRestante)}</td>
-                      <td><span class="pill pill-${r.statusReserva}">${r.statusReserva.replace('_',' ')}</span></td>
+                      <td><span class="pill pill-${r.statusReserva}">${App.statusLabel(r.statusReserva)}</span></td>
                       <td>
                         ${this.can('checkin') ? `<button class="btn btn-primary btn-sm" onclick="App.openPagamento('${r.id}')">+ Pagamento</button>` : ''}
                         <button class="btn btn-outline btn-sm" onclick="App.openReservaDetail('${r.id}')">Ver</button>
