@@ -24,6 +24,7 @@ const IMG = {
   quartoIndividual2:   'img/quarto_individual_2.png',
   quartoIndividualTV:  'img/quarto_individual_tv.png',
   quartoIndividualBanheiro: 'img/quarto_individual_banheiro.png',
+  quartoCasalDuplo:    'img/quarto_casal_duplo.png',
   quartoSolteiroDuplo: 'img/quarto_solteiro.png',   /* FOTO REAL — 2 camas de solteiro */
   quartoStandard:      'img/quarto_solteiro.png',   /* FOTO REAL */
   quartoStandard2:     'img/quarto_solteiro.png',   /* FOTO REAL */
@@ -49,6 +50,7 @@ function imgForRoom(room) {
   };
   if (map[room.id]) return map[room.id];
   if (room.tipo === 'Individual') return IMG.quartoIndividual;
+  if (room.tipo === 'Casal Duplo') return IMG.quartoCasalDuplo;
   if (room.tipo?.includes('Família')) return IMG.quartoSuiteFamilia;
   if (room.tipo?.includes('Master'))  return IMG.quartoSuiteMaster;
   if (room.tipo === 'Superior')       return IMG.quartoSuperior;
