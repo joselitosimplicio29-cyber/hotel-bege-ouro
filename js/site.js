@@ -24,7 +24,7 @@ const IMG = {
   quartoIndividual2:   'img/quarto_individual_2.png',
   quartoIndividualTV:  'img/quarto_individual_tv.png',
   quartoIndividualBanheiro: 'img/quarto_individual_banheiro.png',
-  quartoCasalDuplo:    'img/quarto_casal_duplo.png',
+  quartoCasalDuplo:    'img/quarto_individual_3.png', /* FOTO PROVISÓRIA - O arquivo original sumiu */
   quartoTriplo:        'img/quarto_triplo_1.png',
   quartoTriplo2:       'img/quarto_triplo_2.png',
   quartoTriploTV:      'img/quarto_triplo_tv.png',
