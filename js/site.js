@@ -4,35 +4,35 @@
 
 /* === Banco central de imagens === */
 const IMG = {
-  hero:        'img/fachada.png',
-  fachada:     'img/fachada.png',
-  lobby:       'img/lobby.png',
-  recepcao:    'img/recepcao.png',
-  cafe:        'img/cafe.png',
-  restaurante: 'img/restaurante.png',
-  piscina:     'img/piscina.png',
+  hero:        'img/fachada.png?v=10',
+  fachada:     'img/fachada.png?v=10',
+  lobby:       'img/lobby.png?v=10',
+  recepcao:    'img/recepcao.png?v=10',
+  cafe:        'img/cafe.png?v=10',
+  restaurante: 'img/restaurante.png?v=10',
+  piscina:     'img/piscina.png?v=10',
   spa:         'https://images.unsplash.com/photo-1540555700478-4be289fbecef?ixlib=rb-4.0.3&auto=format&fit=crop&w=1400&q=80',
   jardim:      'https://images.unsplash.com/photo-1582268611958-ebfd161ef9cf?ixlib=rb-4.0.3&auto=format&fit=crop&w=1400&q=80',
   bar:         'https://images.unsplash.com/photo-1543007630-9710e4a00a20?ixlib=rb-4.0.3&auto=format&fit=crop&w=1400&q=80',
-  banheiro:    'img/ESPELHO.png',                   /* FOTO REAL — pia + espelho redondo */
-  banheiroPia: 'img/ESPELHO.png',                   /* FOTO REAL — pia + espelho redondo */
-  banheiroBox: 'img/banheiro_2.png',                /* FOTO REAL — box do chuveiro (ainda não salva) */
+  banheiro:    'img/ESPELHO.png?v=10',                   /* FOTO REAL — pia + espelho redondo */
+  banheiroPia: 'img/ESPELHO.png?v=10',                   /* FOTO REAL — pia + espelho redondo */
+  banheiroBox: 'img/banheiro_2.png?v=10',                /* FOTO REAL — box do chuveiro (ainda não salva) */
   equipe:      'https://images.unsplash.com/photo-1521017432531-fbd92d768814?ixlib=rb-4.0.3&auto=format&fit=crop&w=1400&q=80',
 
   /* Quartos por tipo */
-  quartoIndividual:    'img/quarto_individual_1.png',
-  quartoIndividual2:   'img/quarto_individual_2.png',
-  quartoIndividualTV:  'img/quarto_individual_tv.png',
-  quartoIndividualBanheiro: 'img/quarto_individual_banheiro.png',
-  quartoCasalDuplo:    'img/quarto_individual_3.png', /* FOTO PROVISÓRIA - O arquivo original sumiu */
-  quartoTriplo:        'img/quarto_triplo_1.png',
-  quartoTriplo2:       'img/quarto_triplo_2.png',
-  quartoTriploTV:      'img/quarto_triplo_tv.png',
-  quartoTriploBanheiro:'img/quarto_triplo_banheiro.png',
-  quartoTriploChuveiro:'img/quarto_triplo_chuveiro.png',
-  quartoSolteiroDuplo: 'img/quarto_solteiro.png',   /* FOTO REAL — 2 camas de solteiro */
-  quartoStandard:      'img/quarto_solteiro.png',   /* FOTO REAL */
-  quartoStandard2:     'img/quarto_solteiro.png',   /* FOTO REAL */
+  quartoIndividual:    'img/quarto_solteiro_final.png?v=10',
+  quartoIndividual2:   'img/quarto_solteiro_final.png?v=10',
+  quartoIndividualTV:  'img/quarto_individual_tv.png?v=10',
+  quartoIndividualBanheiro: 'img/quarto_individual_banheiro.png?v=10',
+  quartoCasalDuplo:    'img/quarto_individual_1.png?v=10', /* FOTO PROVISÓRIA - Aguardando upload do usuário */
+  quartoTriplo:        'img/quarto_triplo_final.png?v=10',
+  quartoTriplo2:       'img/quarto_triplo_final.png?v=10',
+  quartoTriploTV:      'img/quarto_triplo_tv.png?v=10',
+  quartoTriploBanheiro:'img/quarto_triplo_banheiro.png?v=10',
+  quartoTriploChuveiro:'img/quarto_triplo_chuveiro.png?v=10',
+  quartoSolteiroDuplo: 'img/quarto_solteiro.png?v=10',   /* FOTO REAL — 2 camas de solteiro */
+  quartoStandard:      'img/quarto_solteiro.png?v=10',   /* FOTO REAL */
+  quartoStandard2:     'img/quarto_solteiro.png?v=10',   /* FOTO REAL */
   quartoSuperior:    'https://images.unsplash.com/photo-1611892440504-42a792e24d32?ixlib=rb-4.0.3&auto=format&fit=crop&w=1400&q=80',
   quartoSuiteMaster: 'https://images.unsplash.com/photo-1566665797739-1674de7a421a?ixlib=rb-4.0.3&auto=format&fit=crop&w=1400&q=80',
   quartoSuiteFamilia:'https://images.unsplash.com/photo-1591088398332-8a7791972843?ixlib=rb-4.0.3&auto=format&fit=crop&w=1400&q=80',
