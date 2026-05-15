@@ -25,6 +25,7 @@ const IMG = {
   quartoIndividualTV:  'img/quarto_individual_tv.png',
   quartoIndividualBanheiro: 'img/quarto_individual_banheiro.png',
   quartoCasalDuplo:    'img/quarto_casal_duplo.png',
+  quartoTriplo:        'img/quarto_triplo.png',
   quartoSolteiroDuplo: 'img/quarto_solteiro.png',   /* FOTO REAL — 2 camas de solteiro */
   quartoStandard:      'img/quarto_solteiro.png',   /* FOTO REAL */
   quartoStandard2:     'img/quarto_solteiro.png',   /* FOTO REAL */
@@ -42,19 +43,14 @@ const IMG = {
 function imgForRoom(room) {
   const map = {
     'q101': IMG.quartoIndividual,
-    'q102': IMG.quartoIndividual2,
-    'q103': IMG.quartoSolteiroDuplo,   /* Standard com 2 camas de solteiro — FOTO REAL */
-    'q201': IMG.quartoSuperior,
-    'q301': IMG.quartoSuiteMaster,
-    'q302': IMG.quartoSuiteFamilia,
+    'q102': IMG.quartoCasalDuplo,
+    'q103': IMG.quartoTriplo,
   };
   if (map[room.id]) return map[room.id];
   if (room.tipo === 'Individual') return IMG.quartoIndividual;
   if (room.tipo === 'Casal Duplo') return IMG.quartoCasalDuplo;
-  if (room.tipo?.includes('Família')) return IMG.quartoSuiteFamilia;
-  if (room.tipo?.includes('Master'))  return IMG.quartoSuiteMaster;
-  if (room.tipo === 'Superior')       return IMG.quartoSuperior;
-  return IMG.quartoSolteiroDuplo;   /* Standard padrão usa a foto real */
+  if (room.tipo === 'Triplo') return IMG.quartoTriplo;
+  return IMG.quartoSolteiroDuplo;
 }
 
 const HOTEL_INFO = {
