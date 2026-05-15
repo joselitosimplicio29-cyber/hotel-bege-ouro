@@ -437,11 +437,29 @@ async function confirmar(){
   const btn = document.getElementById('btnNext');
   btn.textContent = 'Processando...';
   btn.disabled = true;
+  const room = DB.room(state.quartoId);
+
+  // Função interna — vai ao step 5 e abre WhatsApp SEMPRE
+  function irParaWhatsApp(codigo) {
+    const waLink = gerarLinkWhatsApp(codigo, room);
+    document.getElementById('confirmCode').textContent = codigo;
+    document.getElementById('waBtnFinal').href = waLink;
+    show(5);
+    setTimeout(() => { window.open(waLink, '_blank'); }, 600);
+  }
+
   try {
-    const cli = await DB.findOrCreateClient(state.cliente);
-    const room = DB.room(state.quartoId);
+    // Tenta criar/encontrar o cliente; se falhar, continua sem clienteId
+    let clienteId = null;
+    try {
+      const cli = await DB.findOrCreateClient(state.cliente);
+      if (cli && cli.id) clienteId = cli.id;
+    } catch(cliErr) {
+      console.warn('Aviso: não foi possível salvar cliente no banco. Continuando...', cliErr);
+    }
+
     const reserva = {
-      clienteId: cli.id,
+      clienteId: clienteId,
       quartoId: room.id,
       entrada: state.entrada, saida: state.saida,
       diarias: state.diarias, hospedes: state.hospedes,
@@ -453,20 +471,16 @@ async function confirmar(){
       statusPagamento: 'pendente',
       statusReserva: 'pendente',
       origem: 'online',
-      observacoes: state.cliente.obs,
+      observacoes: `Nome: ${state.cliente.nome} | Tel: ${state.cliente.telefone} | CPF: ${state.cliente.cpf} | Email: ${state.cliente.email}` + (state.cliente.obs ? ` | ${state.cliente.obs}` : ''),
     };
+
     const created = await DB.saveReservation(reserva);
-    const waLink = gerarLinkWhatsApp(created.codigo, room);
-    document.getElementById('confirmCode').textContent = created.codigo;
-    document.getElementById('waBtnFinal').href = waLink;
-    show(5);
-    // Redireciona automaticamente após pequeno delay
-    setTimeout(() => { window.open(waLink, '_blank'); }, 600);
+    irParaWhatsApp(created.codigo);
+
   } catch(err) {
-    console.error(err);
-    btn.textContent = 'Finalizar Reserva 💬';
-    btn.disabled = false;
-    alert('Erro ao registrar reserva. Tente novamente.');
+    console.error('Erro ao salvar reserva no banco:', err);
+    // FALLBACK: mesmo com erro, o cliente vai para o WhatsApp com todos os dados
+    irParaWhatsApp('(sem código — confirmar pelo WhatsApp)');
   }
 }
 
