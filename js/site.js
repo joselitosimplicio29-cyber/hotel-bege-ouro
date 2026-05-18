@@ -63,7 +63,7 @@ const HOTEL_INFO = {
   instagram: 'https://instagram.com/hotelbegeouro',
   email: 'begeourohotel@hotmail.com',
   telefone: '(74) 98139-9221',
-  endereco: 'Praça da Rodoviária, s/n — Centro, Ourolândia, Bahia, CEP 44.718-000',
+  endereco: 'Praça Eurides Salgado dos Santos, s/n — Centro, Ourolândia, Bahia, CEP 44.718-000',
 };
 
 const SITE = {
@@ -138,7 +138,7 @@ const SITE = {
             <div>
               <h4>Contato</h4>
               <ul>
-                <li>begeouro.com</li>
+                <li><a href="https://hotelbegeouro.com.br" target="_blank">hotelbegeouro.com.br</a></li>
                 <li><a href="mailto:${HOTEL_INFO.email}">${HOTEL_INFO.email}</a></li>
                 <li><a href="tel:+${HOTEL_INFO.whatsapp}">${HOTEL_INFO.telefone}</a></li>
                 <li>Recepção 24 horas</li>
@@ -150,12 +150,14 @@ const SITE = {
               <ul>
                 <li>${HOTEL_INFO.endereco}</li>
               </ul>
-              <div style="margin-top: 14px; aspect-ratio: 16/9; background: rgba(255,255,255,0.05); overflow: hidden;">
+              <div style="margin-top: 14px; aspect-ratio: 16/9; overflow: hidden; border-radius: 6px;">
                 <iframe
-                  src="https://www.openstreetmap.org/export/embed.html?bbox=-41.4%2C-12.7%2C-41.2%2C-12.5&layer=mapnik"
+                  src="https://maps.google.com/maps?q=Pra%C3%A7a+Eurides+Salgado+dos+Santos,+Ourol%C3%A2ndia,+Bahia,+Brasil&output=embed&z=16"
                   loading="lazy"
-                  style="width:100%; height:100%; border:0; filter: invert(0.85) hue-rotate(180deg);"
-                  title="Mapa"></iframe>
+                  style="width:100%; height:100%; border:0;"
+                  allowfullscreen
+                  referrerpolicy="no-referrer-when-downgrade"
+                  title="Mapa Hotel Bege Ouro"></iframe>
               </div>
               <a href="${prefix}admin/login.html" style="display:inline-block; margin-top:14px; color:var(--dourado-claro); font-size:0.82rem;">Acesso à Dashboard →</a>
             </div>

@@ -569,11 +569,19 @@ img:hover { filter: sepia(0) contrast(1) saturate(1); }
 }
 .stats-strip-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 30px; text-align: center; }
 .stats-strip .num {
-  font-family: 'Playfair Display', serif;
-  font-size: 3.2rem;
+  font-size: 2.2rem;
   color: var(--dourado-claro);
   display: block;
   line-height: 1;
+  margin-bottom: 4px;
+}
+.stats-strip .num-sub {
+  font-family: 'Playfair Display', serif;
+  font-size: 2rem;
+  color: var(--dourado-claro);
+  display: block;
+  line-height: 1.1;
+  font-weight: 500;
 }
 .stats-strip .lbl {
   font-size: 0.78rem;
