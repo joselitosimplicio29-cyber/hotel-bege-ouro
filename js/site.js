@@ -6,7 +6,7 @@
 const IMG = {
   hero:        'img/fachada.png?v=11',
   fachada:     'img/fachada.png?v=11',
-  lobby:       'img/lobby.png?v=11',
+  lobby:       'img/lobby-real.jpg?v=12',
   recepcao:    'img/recepcao.png?v=11',
   cafe:        'img/cafe.png?v=11',
   restaurante: 'img/restaurante.png?v=11',
