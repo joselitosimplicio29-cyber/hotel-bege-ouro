@@ -19,20 +19,46 @@ const IMG = {
   banheiroBox: 'img/banheiro_2.png?v=11',                /* FOTO REAL — box do chuveiro (ainda não salva) */
   equipe:      'https://images.unsplash.com/photo-1521017432531-fbd92d768814?ixlib=rb-4.0.3&auto=format&fit=crop&w=1400&q=80',
 
-  /* Quartos por tipo */
-  quartoIndividual:    'img/quarto_solteiro_final.png?v=11',
-  quartoIndividual2:   'img/quarto_solteiro_final.png?v=11',
-  quartoIndividualTV:  'img/quarto_individual_tv.png?v=11',
-  quartoIndividualBanheiro: 'img/quarto_individual_banheiro.png?v=11',
-  quartoCasalDuplo:    'img/quarto_individual_1.png?v=11', /* FOTO PROVISÓRIA - Aguardando upload do usuário */
-  quartoTriplo:        'img/quarto_triplo_final.png?v=11',
-  quartoTriplo2:       'img/quarto_triplo_final.png?v=11',
-  quartoTriploTV:      'img/quarto_triplo_tv.png?v=11',
-  quartoTriploBanheiro:'img/quarto_triplo_banheiro.png?v=11',
-  quartoTriploChuveiro:'img/quarto_triplo_chuveiro.png?v=11',
-  quartoSolteiroDuplo: 'img/quarto_solteiro.png?v=11',   /* FOTO REAL — 2 camas de solteiro */
-  quartoStandard:      'img/quarto_solteiro.png?v=11',   /* FOTO REAL */
-  quartoStandard2:     'img/quarto_solteiro.png?v=11',   /* FOTO REAL */
+  /* Quartos por tipo — FOTOS REAIS DO HOTEL */
+  // Solteiro
+  quartoSolteiro:       'img/quarto-solteiro.jpg?v=13',
+  quartoSolteiroBanho:  'img/banheiro-solteiro.jpg?v=13',
+  quartoSolteiroPia:    'img/pia-solteiro.jpg?v=13',
+
+  // Casal
+  quartoCasal:          'img/quarto-casal.jpg?v=13',
+  quartoCasal2:         'img/quarto-casal-3.jpg?v=13',
+  quartoCasalBanho:     'img/banheiro-casal.jpg?v=13',
+  quartoCasalFrigobar:  'img/frigobar-tv-casal.jpg?v=13',
+
+  // Casal Duplo (2 pessoas)
+  quartoDuplo:          'img/quarto-casal-2.jpg?v=13',
+  quartoDuploBanho:     'img/banheiro-casal-3.jpg?v=13',
+
+  // Triplo
+  quartoTriploReal:     'img/quarto-triplo.jpg?v=13',
+  quartoTriploBanho:    'img/banheiro-triplo.jpg?v=13',
+
+  // Genéricos (usados em galerias quando faltar foto específica)
+  frigobarGenerico:     'img/frigobar.jpg?v=13',
+  piaVaso:              'img/pia-vaso.jpg?v=13',
+  banheiroGeral:        'img/banheiro-geral.jpg?v=13',
+  tvArCondicionado:     'img/tv-ar-condicionado.jpg?v=13',
+
+  // Aliases (compatibilidade com código existente)
+  quartoIndividual:        'img/quarto-solteiro.jpg?v=13',
+  quartoIndividual2:       'img/quarto-solteiro.jpg?v=13',
+  quartoIndividualTV:      'img/frigobar.jpg?v=13',
+  quartoIndividualBanheiro:'img/banheiro-solteiro.jpg?v=13',
+  quartoCasalDuplo:        'img/quarto-casal-2.jpg?v=13',
+  quartoTriplo:            'img/quarto-triplo.jpg?v=13',
+  quartoTriplo2:           'img/quarto-triplo.jpg?v=13',
+  quartoTriploTV:          'img/frigobar.jpg?v=13',
+  quartoTriploBanheiro:    'img/banheiro-triplo.jpg?v=13',
+  quartoTriploChuveiro:    'img/banheiro-triplo.jpg?v=13',
+  quartoSolteiroDuplo:     'img/quarto-casal-2.jpg?v=13',
+  quartoStandard:          'img/quarto-casal.jpg?v=13',
+  quartoStandard2:         'img/quarto-casal.jpg?v=13',
   quartoSuperior:    'https://images.unsplash.com/photo-1611892440504-42a792e24d32?ixlib=rb-4.0.3&auto=format&fit=crop&w=1400&q=80',
   quartoSuiteMaster: 'https://images.unsplash.com/photo-1566665797739-1674de7a421a?ixlib=rb-4.0.3&auto=format&fit=crop&w=1400&q=80',
   quartoSuiteFamilia:'https://images.unsplash.com/photo-1591088398332-8a7791972843?ixlib=rb-4.0.3&auto=format&fit=crop&w=1400&q=80',
@@ -358,21 +384,64 @@ const SITE = {
   },
 };
 
-/* Retorna o array completo de fotos de um quarto (foto principal + banheiros) */
+/* Retorna o array completo de fotos de um quarto (foto principal + banheiro + pia/frigobar/AC) */
 function roomGallery(roomId) {
   const room = (window.DB && DB.room) ? DB.room(roomId) : null;
-  const primary = room ? imgForRoom(room) : IMG.quartoSolteiroDuplo;
-  
-  if (room && room.tipo === 'Individual') {
-    return [primary, IMG.quartoIndividualTV, IMG.quartoIndividualBanheiro];
-  }
-  
-  if (room && room.tipo === 'Triplo') {
-    return [primary];
-  }
+  const tipo = room ? room.tipo : null;
 
-  return [primary, IMG.banheiroPia];
+  // Solteiro (1 cama solteiro)
+  if (tipo === 'Solteiro' || tipo === 'Individual') {
+    return [
+      IMG.quartoSolteiro,
+      IMG.quartoSolteiroBanho,
+      IMG.quartoSolteiroPia,
+      IMG.frigobarGenerico,
+    ];
+  }
+  // Casal (1 cama de casal)
+  if (tipo === 'Casal') {
+    return [
+      IMG.quartoCasal,
+      IMG.quartoCasal2,
+      IMG.quartoCasalBanho,
+      IMG.quartoCasalFrigobar,
+    ];
+  }
+  // Casal Duplo (2 pessoas, configuração flexível)
+  if (tipo === 'Casal Duplo' || tipo === 'duplo_solteiro') {
+    return [
+      IMG.quartoDuplo,
+      IMG.quartoDuploBanho,
+      IMG.piaVaso,
+      IMG.frigobarGenerico,
+    ];
+  }
+  // Triplo (casal + solteiro)
+  if (tipo === 'Triplo' || tipo === 'Triplo / Família' || tipo === 'triplo') {
+    return [
+      IMG.quartoTriploReal,
+      IMG.quartoTriploBanho,
+      IMG.piaVaso,
+      IMG.frigobarGenerico,
+    ];
+  }
+  // Fallback
+  const primary = room ? imgForRoom(room) : IMG.quartoCasal;
+  return [primary, IMG.banheiroGeral, IMG.frigobarGenerico];
 }
+
+/* Retorna a galeria de uma CATEGORIA (usado nas páginas index/quartos) */
+function categoryGallery(tipo) {
+  const fakeRoom = { tipo };
+  return roomGallery.length ? (function(){
+    if (tipo === 'Solteiro') return [IMG.quartoSolteiro, IMG.quartoSolteiroBanho, IMG.quartoSolteiroPia, IMG.frigobarGenerico];
+    if (tipo === 'Casal') return [IMG.quartoCasal, IMG.quartoCasal2, IMG.quartoCasalBanho, IMG.quartoCasalFrigobar];
+    if (tipo === 'Casal Duplo') return [IMG.quartoDuplo, IMG.quartoDuploBanho, IMG.piaVaso, IMG.frigobarGenerico];
+    if (tipo === 'Triplo' || tipo === 'Triplo / Família') return [IMG.quartoTriploReal, IMG.quartoTriploBanho, IMG.piaVaso, IMG.frigobarGenerico];
+    return [IMG.quartoCasal];
+  })() : [];
+}
+window.categoryGallery = categoryGallery;
 
 window.renderInlineCarousel = function(room, tagClass) {
   const photos = window.roomGallery(room.id);

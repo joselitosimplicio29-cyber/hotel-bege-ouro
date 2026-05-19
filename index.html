@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=11">
+  <link rel="stylesheet" href="css/style.css?v=12">
 </head>
 <body>
 
@@ -245,7 +245,7 @@
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 <script src="js/supabase-config.js"></script>
 <script src="js/db.js"></script>
-<script src="js/site.js?v=12"></script>
+<script src="js/site.js?v=13"></script>
 <script>
 (async function() {
   await DB.load();
@@ -266,7 +266,8 @@
       preco: 150,
       descricao: 'Ideal para viajantes individuais. Oferece conforto, privacidade e praticidade com enxoval premium e ar-condicionado.',
       amenities: ['Wi-Fi', 'Ar condicionado', 'TV', 'Enxoval premium'],
-      img: IMG.galeriaPoltronas,
+      img: IMG.quartoSolteiro,
+      imgs: [IMG.quartoSolteiro, IMG.quartoSolteiroBanho, IMG.quartoSolteiroPia, IMG.frigobarGenerico],
       capacidade: 1
     },
     {
@@ -275,7 +276,8 @@
       preco: 190,
       descricao: 'Excelente opção para casal ou uso individual. Cama confortável, decoração clássica e ambiente climatizado.',
       amenities: ['Wi-Fi', 'Ar condicionado', 'TV', 'Enxoval premium'],
-      img: IMG.galeriaIluminacao,
+      img: IMG.quartoCasal,
+      imgs: [IMG.quartoCasal, IMG.quartoCasal2, IMG.quartoCasalBanho, IMG.quartoCasalFrigobar],
       capacidade: 2
     },
     {
@@ -284,7 +286,8 @@
       preco: 270,
       descricao: 'Espaço flexível para duas pessoas. Pode ser configurado com uma cama de casal ou duas camas de solteiro.',
       amenities: ['Wi-Fi', 'Ar condicionado', 'TV', 'Enxoval premium'],
-      img: IMG.galeriaFrutas,
+      img: IMG.quartoDuplo,
+      imgs: [IMG.quartoDuplo, IMG.quartoDuploBanho, IMG.piaVaso, IMG.frigobarGenerico],
       capacidade: 2
     },
     {
@@ -293,14 +296,23 @@
       preco: 310,
       descricao: 'Perfeito para pequenas famílias ou grupos de três pessoas. Amplo, confortável e com total comodidade.',
       amenities: ['Wi-Fi', 'Ar condicionado', 'TV', 'Frigobar', 'Enxoval premium'],
-      img: IMG.galeriaDoces,
+      img: IMG.quartoTriploReal,
+      imgs: [IMG.quartoTriploReal, IMG.quartoTriploBanho, IMG.piaVaso, IMG.frigobarGenerico],
       capacidade: 3
     }
   ];
-  grid.innerHTML = categorias.map(c => `
+  grid.innerHTML = categorias.map((c, idx) => `
     <article class="room-card">
-      <div class="room-photo" style="background-image: url('${c.img}');">
+      <div class="room-photo room-photo-main" id="mainPhoto-${idx}" style="background-image: url('${c.img}');">
         <span class="room-tag">Premium</span>
+      </div>
+      <div class="room-thumbs">
+        ${c.imgs.map((u, i) => `
+          <div class="room-thumb${i === 0 ? ' active' : ''}"
+               style="background-image: url('${u}');"
+               onclick="document.getElementById('mainPhoto-${idx}').style.backgroundImage='url(${u})'; this.parentElement.querySelectorAll('.room-thumb').forEach(t=>t.classList.remove('active')); this.classList.add('active');"
+               role="img" aria-label="Foto ${i + 1} do quarto ${c.tipo}"></div>
+        `).join('')}
       </div>
       <div class="room-body">
         <h3>${c.tipo}</h3>
@@ -312,27 +324,4 @@
         <div class="room-amenities">
           ${c.amenities.map(a => `<span class="amenity">${a}</span>`).join('')}
         </div>
-        <div class="room-foot">
-          <div class="price"><small>a partir de</small> ${DB.formatBRL(c.preco)} <small>/ diária</small></div>
-          <a href="reservar.html?tipo=${encodeURIComponent(c.tipo)}" class="btn btn-dark btn-sm">Reservar</a>
-        </div>
-      </div>
-    </article>
-  `).join('');
-
-  /* galeria preview (4 fotos) */
-  const galleryItems = [
-    { url: IMG.galeriaFrutas, label: 'Mesa de Frutas', cls: 'tall' },
-    { url: IMG.galeriaPoltronas, label: 'Área de Estar', cls: 'wide' },
-    { url: IMG.galeriaIluminacao, label: 'Iluminação Decorativa', cls: 'tall' },
-    { url: IMG.galeriaDoces, label: 'Mesa de Doces e Bolos', cls: 'wide' },
-  ];
-  document.getElementById('galleryPreview').innerHTML = galleryItems.map(g => `
-    <div class="gallery-item ${g.cls}" style="background-image: url('${g.url}');" role="img" aria-label="${g.label}">
-      <span class="label">${g.label}</span>
-    </div>
-  `).join('');
-})();
-</script>
-</body>
-</html>
+        <div class="room-foo

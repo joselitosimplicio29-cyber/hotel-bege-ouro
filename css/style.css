@@ -564,6 +564,25 @@ img:hover { filter: sepia(0) contrast(1) saturate(1); }
   font-weight: 600;
   z-index: 10;
 }
+/* Thumbnails de galeria do quarto (banheiro, pia, frigobar, etc) */
+.room-thumbs {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  padding: 6px;
+  background: var(--bege-claro, #f4ede0);
+}
+.room-thumb {
+  aspect-ratio: 1/1;
+  background-size: cover;
+  background-position: center;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: border-color 0.25s, transform 0.25s;
+}
+.room-thumb:hover { transform: scale(1.04); }
+.room-thumb.active { border-color: var(--dourado, #c9a961); }
+
 .room-body { padding: 30px; flex: 1; display: flex; flex-direction: column; }
 .room-body h3 { margin-bottom: 8px; font-size: 1.3rem; }
 .room-meta {
@@ -1272,4 +1291,55 @@ textarea { resize: vertical; min-height: 100px; }
 ::view-transition-new(*) {
   animation-duration: 0.25s;
   animation-timing-function: cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+/* ===== ROOM THUMBS GALLERY ===== */
+.room-thumbs {
+  display: flex;
+  gap: 8px;
+  padding: 10px;
+  background: var(--creme);
+  border-bottom: 1px solid var(--cinza-borda);
+  justify-content: center;
+}
+.room-thumb {
+  width: 52px;
+  height: 38px;
+  background-size: cover;
+  background-position: center;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: var(--transicao);
+}
+.room-thumb:hover {
+  transform: translateY(-2px);
+}
+.room-thumb.active {
+  border-color: var(--dourado-escuro);
+}
+
+.room-row-gallery {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.room-row-thumbs {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-start;
+}
+.room-row-thumb {
+  width: 60px;
+  height: 45px;
+  background-size: cover;
+  background-position: center;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: var(--transicao);
+}
+.room-row-thumb:hover {
+  transform: translateY(-2px);
+}
+.room-row-thumb.active {
+  border-color: var(--dourado-escuro);
 }
