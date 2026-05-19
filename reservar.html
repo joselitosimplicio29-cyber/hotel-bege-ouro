@@ -225,6 +225,39 @@ document.getElementById('fSaida').value = tomorrow();
 const params = new URLSearchParams(location.search);
 const preTipo = params.get('tipo');
 const preQuarto = params.get('quarto');
+const prePessoas = Number(params.get('pessoas')) || null;
+
+// Normaliza tipos para comparação tolerante:
+// "Solteiro" / "solteiro" / "Duplo Solteiro" / "duplo_solteiro" / "Triplo / Família" / "triplo" → todos batem
+function normalizarTipo(t) {
+  if (!t) return '';
+  return String(t)
+    .toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '') // remove acentos
+    .replace(/\s*\/\s*familia\b/, '')                  // "triplo / familia" → "triplo"
+    .replace(/[\s_\-]+/g, '_')                          // espaços/hífens → "_"
+    .trim();
+}
+const preTipoNorm = normalizarTipo(preTipo);
+
+// Retorna o preço correto de acordo com a ocupação (1p / 2p / 3p)
+function precoPorHospedes(room, hospedes) {
+  if (!room) return 0;
+  const n = Number(hospedes) || 1;
+  if (n <= 1 && room.preco_1p != null) return room.preco_1p;
+  if (n === 2 && room.preco_2p != null) return room.preco_2p;
+  if (n >= 3 && room.preco_3p != null) return room.preco_3p;
+  return room.preco_2p || room.preco_3p || room.preco_1p || room.preco || 0;
+}
+
+// Se o link trouxer ?pessoas=X, aplica no select e no state antes de qualquer cálculo
+if (prePessoas) {
+  const sel = document.getElementById('fHospedes');
+  if (sel) {
+    const opt = Array.from(sel.options).find(o => Number(o.value) === prePessoas);
+    if (opt) sel.value = String(prePessoas);
+  }
+}
 
 function show(step){
   state.step = step;
@@ -285,7 +318,7 @@ function step1Valid(){
 function renderRooms(){
   const grid = document.getElementById('pickGrid');
   let rooms = DB.availableRoomsBetween(state.entrada, state.saida).filter(r => r.capacidade >= state.hospedes);
-  if (preTipo) rooms = rooms.filter(r => r.tipo === preTipo);
+  if (preTipoNorm) rooms = rooms.filter(r => normalizarTipo(r.tipo) === preTipoNorm);
   if (!rooms.length) {
     grid.innerHTML = `
       <div style="grid-column:1/-1; text-align:center; padding:60px 20px; background:var(--creme);">
@@ -304,7 +337,7 @@ function renderRooms(){
         <div style="font-size:0.85rem; color:var(--cinza-texto);">Até ${r.capacidade} pessoas · ${r.amenities.slice(0,3).join(' · ')}</div>
         <div class="pick-info">
           <span style="font-size:0.85rem; color:var(--cinza-texto);">${state.diarias} ${state.diarias===1?'diária':'diárias'}</span>
-          <span class="pick-price">${DB.formatBRL(r.preco)} <small style="font-size:0.7rem; color:var(--cinza-texto); font-family:'Inter',sans-serif;">/ diária</small></span>
+          <span class="pick-price">${DB.formatBRL(precoPorHospedes(r, state.hospedes))} <small style="font-size:0.7rem; color:var(--cinza-texto); font-family:'Inter',sans-serif;">/ diária</small></span>
         </div>
       </div>
     </div>
@@ -386,7 +419,7 @@ function updateSummary(){
     document.getElementById('sumNights').textContent = state.diarias;
     document.getElementById('sumGuests').textContent = state.hospedes;
     if (room) {
-      const sub = room.preco * state.diarias;
+      const sub = precoPorHospedes(room, state.hospedes) * state.diarias;
       const desc = state.pagamento === 'pix' ? sub * 0.05 : 0;
       document.getElementById('sumSub').textContent = DB.formatBRL(sub);
       document.getElementById('sumDiscRow').style.display = desc > 0 ? '' : 'none';
@@ -463,7 +496,7 @@ async function confirmar(){
       quartoId: room.id,
       entrada: state.entrada, saida: state.saida,
       diarias: state.diarias, hospedes: state.hospedes,
-      valorDiaria: room.preco,
+      valorDiaria: precoPorHospedes(room, state.hospedes),
       valorTotal: state.totalFinal,
       valorPago: 0,
       valorRestante: state.totalFinal,
@@ -487,7 +520,7 @@ async function confirmar(){
 document.getElementById('btnNext').addEventListener('click', async () => {
   if (state.step === 1) { if (step1Valid()) { renderRooms(); show(2); } }
   else if (state.step === 2) { if (step2Valid()) show(3); }
-  else if (state.step === 3) { if (step3Valid()) { updateSummary(); state.totalFinal = state.totalFinal || (DB.room(state.quartoId)?.preco * state.diarias); preencheStep4(); show(4); } }
+  else if (state.step === 3) { if (step3Valid()) { updateSummary(); state.totalFinal = state.totalFinal || (precoPorHospedes(DB.room(state.quartoId), state.hospedes) * state.diarias); preencheStep4(); show(4); } }
   else if (state.step === 4) { if (step4Valid()) await confirmar(); }
 });
 document.getElementById('btnBack').addEventListener('click', () => {

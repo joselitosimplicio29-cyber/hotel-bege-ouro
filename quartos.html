@@ -170,7 +170,7 @@
         </div>
         <div class="price-line">
           <div class="price"><small>a partir de</small> ${DB.formatBRL(c.preco)} <small>/ diária</small></div>
-          <a href="reservar.html?tipo=${encodeURIComponent(c.tipo)}" class="btn btn-dark btn-sm">Reservar este quarto</a>
+          <a href="reservar.html?tipo=${encodeURIComponent(c.tipo)}&pessoas=${c.capacidade}" class="btn btn-dark btn-sm">Reservar este quarto</a>
         </div>
       </div>
     </div>`).join('');
