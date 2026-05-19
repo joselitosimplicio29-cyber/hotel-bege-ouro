@@ -6,20 +6,20 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Galeria — Hotel Bege Ouro</title>
-  <meta name="description" content="Galeria de fotos do Hotel Bege Ouro: quartos, piscina, restaurante e áreas comuns.">
+  <meta name="description" content="Galeria de fotos do Hotel Bege Ouro: quartos, recepção, café e áreas comuns.">
   <meta property="og:title" content="Galeria — Hotel Bege Ouro">
-  <meta property="og:description" content="Quartos, piscina, restaurante e áreas comuns.">
-  <meta property="og:image" content="https://hotel-bege-ouro.vercel.app/img/fachada.png">
+  <meta property="og:description" content="Quartos, recepção, café e áreas comuns.">
+  <meta property="og:image" content="https://hotelbegeouro.com.br/img/lobby-real.jpg">
   <meta property="og:url" content="https://hotel-bege-ouro.vercel.app/galeria.html">
   <meta property="og:type" content="website">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=12">
+  <link rel="stylesheet" href="css/style.css?v=13">
   <style>
     .page-header {
       padding: 200px 0 110px;
       background: linear-gradient(rgba(26,19,13,0.78), rgba(60,40,25,0.7)),
-                  url('https://images.unsplash.com/photo-1582719508461-905c673771fd?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80') center/cover;
+                  url('img/lobby-real.jpg') center/cover;
       color: var(--creme);
       text-align: center;
     }
@@ -81,7 +81,7 @@
       <button class="filter-btn" data-cat="quartos">Quartos</button>
       <button class="filter-btn" data-cat="areas">Áreas comuns</button>
       <button class="filter-btn" data-cat="gastronomia">Gastronomia</button>
-      <button class="filter-btn" data-cat="lazer">Lazer</button>
+      
     </div>
 
     <div class="gallery-grid" id="galleryGrid"></div>
@@ -104,15 +104,20 @@
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 <script src="js/supabase-config.js"></script>
 <script src="js/db.js"></script>
-<script src="js/site.js?v=14"></script>
+<script src="js/site.js?v=18"></script>
 <script>
   SITE.init('galeria');
 
   const items = [
-    { url: IMG.galeriaFrutas,      cat: 'gastronomia', label: 'Mesa de Frutas', cls: 'tall' },
-    { url: IMG.galeriaPoltronas,   cat: 'areas',       label: 'Área de Estar', cls: 'wide' },
-    { url: IMG.galeriaIluminacao,  cat: 'areas',       label: 'Iluminação Decorativa', cls: 'tall' },
-    { url: IMG.galeriaDoces,       cat: 'gastronomia', label: 'Mesa de Doces e Bolos', cls: 'wide' },
+    { url: IMG.fachada,            cat: 'areas',       label: 'Fachada do Hotel Bege Ouro', cls: 'tall' },
+    { url: IMG.lobby,              cat: 'areas',       label: 'Recepção principal', cls: 'wide' },
+    { url: IMG.galeriaPoltronas,   cat: 'areas',       label: 'Sofás na entrada da recepção', cls: 'wide' },
+    { url: IMG.galeriaIluminacao,  cat: 'areas',       label: 'Detalhes de iluminação', cls: 'tall' },
+    { url: IMG.galeriaFrutas,      cat: 'gastronomia', label: 'Mesa de frutas e frios', cls: 'tall' },
+    { url: IMG.galeriaDoces,       cat: 'gastronomia', label: 'Mesa de doces e bolos', cls: 'wide' },
+    { url: IMG.quartoCasal,        cat: 'quartos',     label: 'Quarto casal', cls: 'wide' },
+    { url: IMG.quartoSolteiro,     cat: 'quartos',     label: 'Quarto solteiro', cls: 'wide' },
+    { url: IMG.quartoTriploReal,   cat: 'quartos',     label: 'Quarto triplo', cls: 'wide' },
   ];
 
   const grid = document.getElementById('galleryGrid');

@@ -4,20 +4,18 @@
 
 /* === Banco central de imagens === */
 const IMG = {
-  hero:        'img/fachada.png?v=11',
-  fachada:     'img/fachada.png?v=11',
-  lobby:       'img/lobby-real.jpg?v=12',
-  recepcao:    'img/recepcao.png?v=11',
-  cafe:        'img/cafe.png?v=11',
-  restaurante: 'img/restaurante.png?v=11',
-  piscina:     'img/piscina.png?v=11',
-  spa:         'https://images.unsplash.com/photo-1540555700478-4be289fbecef?ixlib=rb-4.0.3&auto=format&fit=crop&w=1400&q=80',
-  jardim:      'https://images.unsplash.com/photo-1582268611958-ebfd161ef9cf?ixlib=rb-4.0.3&auto=format&fit=crop&w=1400&q=80',
-  bar:         'https://images.unsplash.com/photo-1543007630-9710e4a00a20?ixlib=rb-4.0.3&auto=format&fit=crop&w=1400&q=80',
+  hero:        'img/lobby-real.jpg?v=15',
+  fachada:     'img/lobby-real.jpg?v=15',
+  lobby:       'img/foto-capa.jpg?v=15',
+  recepcao:    'img/foto-capa.jpg?v=15',
+  cafe:        'img/galeria_frutas.png?v=15',
+  restaurante: 'img/galeria_doces.png?v=15',
+  areaEstar:   'img/galeria_poltronas.png?v=15',
+  decoracao:   'img/galeria_iluminacao.png?v=15',
   banheiro:    'img/ESPELHO.png?v=11',                   /* FOTO REAL — pia + espelho redondo */
   banheiroPia: 'img/ESPELHO.png?v=11',                   /* FOTO REAL — pia + espelho redondo */
   banheiroBox: 'img/banheiro_2.png?v=11',                /* FOTO REAL — box do chuveiro (ainda não salva) */
-  equipe:      'https://images.unsplash.com/photo-1521017432531-fbd92d768814?ixlib=rb-4.0.3&auto=format&fit=crop&w=1400&q=80',
+  equipe:      'img/galeria_poltronas.png?v=15',
 
   /* Quartos por tipo — FOTOS REAIS DO HOTEL */
   // Solteiro
@@ -60,14 +58,14 @@ const IMG = {
   quartoSolteiroDuplo:     'img/quarto_solteiro.png?v=13',
   quartoStandard:          'img/quarto-casal.jpg?v=13',
   quartoStandard2:         'img/quarto-casal.jpg?v=13',
-  quartoSuperior:    'https://images.unsplash.com/photo-1611892440504-42a792e24d32?ixlib=rb-4.0.3&auto=format&fit=crop&w=1400&q=80',
-  quartoSuiteMaster: 'https://images.unsplash.com/photo-1566665797739-1674de7a421a?ixlib=rb-4.0.3&auto=format&fit=crop&w=1400&q=80',
-  quartoSuiteFamilia:'https://images.unsplash.com/photo-1591088398332-8a7791972843?ixlib=rb-4.0.3&auto=format&fit=crop&w=1400&q=80',
+  quartoSuperior:    'img/quarto-casal.jpg?v=13',
+  quartoSuiteMaster: 'img/quarto-triplo.jpg?v=13',
+  quartoSuiteFamilia:'img/quarto-triplo.jpg?v=13',
 
   /* Avatares */
-  avatar1: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80',
-  avatar2: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80',
-  avatar3: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80',
+  avatar1: 'img/icone.png?v=15',
+  avatar2: 'img/icone.png?v=15',
+  avatar3: 'img/icone.png?v=15',
   
   /* Novas fotos da Galeria */
   galeriaFrutas: 'img/galeria_frutas.png?v=1',
