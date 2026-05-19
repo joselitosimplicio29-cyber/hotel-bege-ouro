@@ -252,7 +252,7 @@
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 <script src="js/supabase-config.js"></script>
 <script src="js/db.js"></script>
-<script src="js/site.js?v=13"></script>
+<script src="js/site.js?v=14"></script>
 <script>
 (async function() {
   await DB.load();
@@ -331,4 +331,30 @@
         <div class="room-amenities">
           ${c.amenities.map(a => `<span class="amenity">${a}</span>`).join('')}
         </div>
-        <div class="room-foo
+        <div class="room-foot">
+          <div class="price"><small>a partir de</small> ${DB.formatBRL(c.preco)} <small>/ diária</small></div>
+          <a href="reservar.html?tipo=${encodeURIComponent(c.tipo)}" class="btn btn-dark btn-sm">Reservar</a>
+        </div>
+      </div>
+    </article>
+  `).join('');
+
+  /* galeria prévia */
+  const galleryPreview = [
+    { url: IMG.fachada, label: 'Fachada do hotel', cls: 'wide' },
+    { url: IMG.lobby, label: 'Lobby e recepção', cls: 'tall' },
+    { url: IMG.galeriaFrutas, label: 'Café da manhã' },
+    { url: IMG.quartoCasal, label: 'Quarto casal' },
+    { url: IMG.quartoTriploReal, label: 'Quarto triplo', cls: 'wide' },
+    { url: IMG.galeriaPoltronas, label: 'Área de estar' },
+  ];
+
+  document.getElementById('galleryPreview').innerHTML = galleryPreview.map(g => `
+    <div class="gallery-item ${g.cls || ''}" style="background-image: url('${g.url}');" role="img" aria-label="${g.label}">
+      <span class="label">${g.label}</span>
+    </div>
+  `).join('');
+})();
+</script>
+</body>
+</html>

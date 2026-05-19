@@ -5,10 +5,39 @@
    ============================================================ */
 
 /* === Instância Supabase === */
-const _sb = window.supabase.createClient(
-  window.SUPABASE_CONFIG.url,
-  window.SUPABASE_CONFIG.anonKey
-);
+const _sb = (() => {
+  if (!window.supabase?.createClient || !window.SUPABASE_CONFIG?.url || !window.SUPABASE_CONFIG?.anonKey) {
+    console.warn('Supabase indisponivel. Usando dados locais do site.');
+    return null;
+  }
+
+  try {
+    return window.supabase.createClient(
+      window.SUPABASE_CONFIG.url,
+      window.SUPABASE_CONFIG.anonKey
+    );
+  } catch (err) {
+    console.warn('Nao foi possivel iniciar o Supabase. Usando dados locais do site.', err);
+    return null;
+  }
+})();
+
+const REMOTE_TIMEOUT_MS = 8000;
+
+function _withTimeout(promise, fallback = { data: null, error: null }) {
+  return Promise.race([
+    promise,
+    new Promise(resolve => setTimeout(() => resolve(fallback), REMOTE_TIMEOUT_MS)),
+  ]);
+}
+
+function _localId(prefix) {
+  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function _reservationCode() {
+  return `BO-${Date.now().toString().slice(-6)}`;
+}
 
 /* === Cache em memória === */
 const _cache = {
@@ -74,26 +103,39 @@ const DB = {
       { id: 'q107', numero: "107", andar: "1º andar", tipo: "casal", camas: "1 cama de casal", capacidade: 2, preco: 190, preco_1p: 190, preco_2p: 270, preco_3p: null, status: "disponivel", descricao: "Conforto clássico para duas pessoas.", amenities: ["Wi-Fi", "Ar condicionado", "TV"] },
       { id: 'q108', numero: "108", andar: "1º andar", tipo: "casal", camas: "1 cama de casal", capacidade: 2, preco: 190, preco_1p: 190, preco_2p: 270, preco_3p: null, status: "disponivel", descricao: "Quarto com bela vista.", amenities: ["Wi-Fi", "Ar condicionado", "TV"] },
     ];
-    const [clientsRes, reservsRes, consuRes, paysRes, profRes] = await Promise.all([
-      _sb.from('clients').select('*').order('nome'),
-      _sb.from('reservations').select('*').order('criada_em', { ascending: false }),
-      _sb.from('consumptions').select('*').order('data_hora', { ascending: false }),
-      _sb.from('payments').select('*').order('data', { ascending: false }),
-      _sb.from('profiles').select('*'),
-    ]);
     _cache.rooms        = QUARTOS_FIXOS;
-    _cache.clients      = (clientsRes.data || []).map(_mapClient);
-    _cache.reservations = (reservsRes.data || []).map(_mapReservation);
-    _cache.consumptions = (consuRes.data   || []).map(_mapConsumption);
-    _cache.payments     = (paysRes.data    || []).map(_mapPayment);
-    _cache.profiles     = (profRes.data    || []).map(_mapProfile);
-    _cache.loaded       = true;
-    this._subscribeRealtime();
+
+    if (_cache.loaded) return;
+    if (!_sb) {
+      _cache.loaded = true;
+      return;
+    }
+
+    try {
+      const [clientsRes, reservsRes, consuRes, paysRes, profRes] = await Promise.all([
+        _withTimeout(_sb.from('clients').select('*').order('nome')),
+        _withTimeout(_sb.from('reservations').select('*').order('criada_em', { ascending: false })),
+        _withTimeout(_sb.from('consumptions').select('*').order('data_hora', { ascending: false })),
+        _withTimeout(_sb.from('payments').select('*').order('data', { ascending: false })),
+        _withTimeout(_sb.from('profiles').select('*')),
+      ]);
+
+      _cache.clients      = (clientsRes.data || []).map(_mapClient);
+      _cache.reservations = (reservsRes.data || []).map(_mapReservation);
+      _cache.consumptions = (consuRes.data   || []).map(_mapConsumption);
+      _cache.payments     = (paysRes.data    || []).map(_mapPayment);
+      _cache.profiles     = (profRes.data    || []).map(_mapProfile);
+      this._subscribeRealtime();
+    } catch (err) {
+      console.warn('Nao foi possivel carregar os dados remotos. Usando cache local.', err);
+    } finally {
+      _cache.loaded = true;
+    }
   },
 
   _realtimeStarted: false,
   _subscribeRealtime() {
-    if (this._realtimeStarted) return;
+    if (!_sb || this._realtimeStarted) return;
     this._realtimeStarted = true;
     _sb.channel('hotel-live')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'reservations' }, async () => {
@@ -133,6 +175,8 @@ const DB = {
       return _cache._currentUser;
     }
 
+    if (!_sb) return null;
+
     const { data, error } = await _sb.auth.signInWithPassword({ email, password: senha });
     if (error) return null;
     const { data: prof } = await _sb.from('profiles').select('*').eq('id', data.user.id).single();
@@ -142,7 +186,7 @@ const DB = {
   },
   async logout() { 
     localStorage.removeItem('hc_user');
-    await _sb.auth.signOut(); 
+    if (_sb) await _sb.auth.signOut(); 
     _cache._currentUser = null; 
   },
   async currentUser() {
@@ -152,6 +196,8 @@ const DB = {
       _cache._currentUser = JSON.parse(hcStr);
       return _cache._currentUser;
     }
+    if (!_sb) return null;
+
     const { data: { user } } = await _sb.auth.getUser();
     if (!user) return null;
     const { data: prof } = await _sb.from('profiles').select('*').eq('id', user.id).single();
@@ -191,6 +237,12 @@ const DB = {
     return c;
   },
   async findOrCreateClient({ nome, cpf, telefone, email }) {
+    if (!_sb) {
+      const c = { id: _localId('client'), nome, cpf, telefone, email, observacoes: '', criadoEm: new Date().toISOString().slice(0, 10) };
+      _cache.clients.push(c);
+      return c;
+    }
+
     let c = _cache.clients.find(x => (cpf && x.cpf === cpf) || (email && x.email === email));
     if (c) return c;
     let query = _sb.from('clients').select('*');
@@ -218,6 +270,18 @@ const DB = {
     return _cache.rooms.filter(r => r.status !== 'manutencao' && this.isRoomAvailable(r.id, entrada, saida));
   },
   async saveReservation(res) {
+    if (!_sb) {
+      const local = {
+        ...res,
+        id: res.id || _localId('reservation'),
+        codigo: res.codigo || _reservationCode(),
+        criadaEm: new Date().toISOString(),
+      };
+      _cache.reservations.unshift(local);
+      await this.refreshRoomStatuses();
+      return local;
+    }
+
     const p = {
       cliente_id: res.clienteId, quarto_id: res.quartoId, entrada: res.entrada, saida: res.saida,
       diarias: res.diarias, hospedes: res.hospedes, valor_diaria: res.valorDiaria,

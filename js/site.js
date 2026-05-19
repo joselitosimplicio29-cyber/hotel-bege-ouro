@@ -76,18 +76,43 @@ const IMG = {
   galeriaIluminacao: 'img/galeria_iluminacao.png?v=1',
 };
 
+const ROOM_MAIN_IMAGE_BY_ID = {
+  q01: IMG.quartoCasal,
+  q02: IMG.quartoDuplo,
+  q03: IMG.quartoTriploReal,
+  q04: IMG.quartoDuplo,
+  q05: IMG.quartoCasal2,
+  q07: IMG.quartoSolteiro,
+  q08: IMG.quartoCasal3,
+  q101: IMG.quartoTriploReal,
+  q102: IMG.quartoCasal,
+  q103: IMG.quartoCasal2,
+  q104: IMG.quartoCasal3,
+  q106: IMG.quartoCasal,
+  q107: IMG.quartoCasal2,
+  q108: IMG.quartoCasal3,
+};
+
+function normalizeRoomType(tipo = '') {
+  return String(tipo)
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, '_');
+}
+
 /* Mapeia o tipo do quarto à imagem */
 function imgForRoom(room) {
-  const map = {
-    'q101': IMG.quartoIndividual,
-    'q102': IMG.quartoCasalDuplo,
-    'q103': IMG.quartoTriplo,
-  };
-  if (map[room.id]) return map[room.id];
-  if (room.tipo === 'Individual') return IMG.quartoIndividual;
-  if (room.tipo === 'Casal Duplo') return IMG.quartoCasalDuplo;
-  if (room.tipo === 'Triplo') return IMG.quartoTriplo;
-  return IMG.quartoSolteiroDuplo;
+  if (!room) return IMG.quartoCasal;
+  if (ROOM_MAIN_IMAGE_BY_ID[room.id]) return ROOM_MAIN_IMAGE_BY_ID[room.id];
+
+  const tipo = normalizeRoomType(room.tipo);
+  if (tipo === 'solteiro' || tipo === 'individual') return IMG.quartoSolteiro;
+  if (tipo === 'casal') return IMG.quartoCasal;
+  if (tipo === 'casal_duplo' || tipo === 'duplo_solteiro') return IMG.quartoDuplo;
+  if (tipo === 'triplo' || tipo === 'triplo_/_familia' || tipo === 'familia') return IMG.quartoTriploReal;
+  return IMG.quartoCasal;
 }
 
 const HOTEL_INFO = {
@@ -388,10 +413,10 @@ const SITE = {
 /* Retorna o array completo de fotos de um quarto (foto principal + banheiro + pia/frigobar/AC) */
 function roomGallery(roomId) {
   const room = (window.DB && DB.room) ? DB.room(roomId) : null;
-  const tipo = room ? room.tipo : null;
+  const tipo = normalizeRoomType(room ? room.tipo : '');
 
   // Solteiro (1 cama solteiro)
-  if (tipo === 'Solteiro' || tipo === 'Individual') {
+  if (tipo === 'solteiro' || tipo === 'individual') {
     return [
       IMG.quartoSolteiro,
       IMG.quartoSolteiroBanho,
@@ -400,16 +425,17 @@ function roomGallery(roomId) {
     ];
   }
   // Casal (1 cama de casal)
-  if (tipo === 'Casal') {
+  if (tipo === 'casal') {
     return [
-      IMG.quartoCasal,
+      imgForRoom(room),
       IMG.quartoCasal2,
+      IMG.quartoCasal3,
       IMG.quartoCasalBanho,
       IMG.quartoCasalFrigobar,
     ];
   }
   // Casal Duplo (2 pessoas, configuração flexível)
-  if (tipo === 'Casal Duplo' || tipo === 'duplo_solteiro') {
+  if (tipo === 'casal_duplo' || tipo === 'duplo_solteiro') {
     return [
       IMG.quartoDuplo,
       IMG.quartoDuploBanho,
@@ -418,7 +444,7 @@ function roomGallery(roomId) {
     ];
   }
   // Triplo (casal + solteiro)
-  if (tipo === 'Triplo' || tipo === 'Triplo / Família' || tipo === 'triplo') {
+  if (tipo === 'triplo' || tipo === 'triplo_/_familia' || tipo === 'familia') {
     return [
       IMG.quartoTriploReal,
       IMG.quartoTriploBanho,
@@ -433,12 +459,12 @@ function roomGallery(roomId) {
 
 /* Retorna a galeria de uma CATEGORIA (usado nas páginas index/quartos) */
 function categoryGallery(tipo) {
-  const fakeRoom = { tipo };
+  const normalized = normalizeRoomType(tipo);
   return roomGallery.length ? (function(){
-    if (tipo === 'Solteiro') return [IMG.quartoSolteiro, IMG.quartoSolteiroBanho, IMG.quartoSolteiroPia, IMG.frigobarGenerico];
-    if (tipo === 'Casal') return [IMG.quartoCasal, IMG.quartoCasal2, IMG.quartoCasalBanho, IMG.quartoCasalFrigobar];
-    if (tipo === 'Casal Duplo') return [IMG.quartoDuplo, IMG.quartoDuploBanho, IMG.piaVaso, IMG.frigobarGenerico];
-    if (tipo === 'Triplo' || tipo === 'Triplo / Família') return [IMG.quartoTriploReal, IMG.quartoTriploBanho, IMG.piaVaso, IMG.frigobarGenerico];
+    if (normalized === 'solteiro' || normalized === 'individual') return [IMG.quartoSolteiro, IMG.quartoSolteiroBanho, IMG.quartoSolteiroPia, IMG.frigobarGenerico];
+    if (normalized === 'casal') return [IMG.quartoCasal, IMG.quartoCasal2, IMG.quartoCasal3, IMG.quartoCasalBanho, IMG.quartoCasalFrigobar];
+    if (normalized === 'casal_duplo' || normalized === 'duplo_solteiro') return [IMG.quartoDuplo, IMG.quartoDuploBanho, IMG.piaVaso, IMG.frigobarGenerico];
+    if (normalized === 'triplo' || normalized === 'triplo_/_familia' || normalized === 'familia') return [IMG.quartoTriploReal, IMG.quartoTriploBanho, IMG.piaVaso, IMG.frigobarGenerico];
     return [IMG.quartoCasal];
   })() : [];
 }
@@ -488,4 +514,5 @@ window.SITE = SITE;
 window.IMG = IMG;
 window.imgForRoom = imgForRoom;
 window.roomGallery = roomGallery;
+window.normalizeRoomType = normalizeRoomType;
 window.HOTEL_INFO = HOTEL_INFO;
