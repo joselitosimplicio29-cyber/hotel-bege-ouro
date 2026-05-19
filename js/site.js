@@ -27,13 +27,14 @@ const IMG = {
 
   // Casal
   quartoCasal:          'img/quarto-casal.jpg?v=13',
-  quartoCasal2:         'img/quarto-casal-3.jpg?v=13',
+  quartoCasal2:         'img/quarto-casal-2.jpg?v=13',
+  quartoCasal3:         'img/quarto-casal-3.jpg?v=13',
   quartoCasalBanho:     'img/banheiro-casal.jpg?v=13',
   quartoCasalFrigobar:  'img/frigobar-tv-casal.jpg?v=13',
 
-  // Casal Duplo (2 pessoas)
-  quartoDuplo:          'img/quarto-casal-2.jpg?v=13',
-  quartoDuploBanho:     'img/banheiro-casal-3.jpg?v=13',
+  // Duplo Solteiro (2 camas solteiro)
+  quartoDuplo:          'img/quarto_solteiro.png?v=13',
+  quartoDuploBanho:     'img/banheiro-geral.jpg?v=13',
 
   // Triplo
   quartoTriploReal:     'img/quarto-triplo.jpg?v=13',
@@ -50,13 +51,13 @@ const IMG = {
   quartoIndividual2:       'img/quarto-solteiro.jpg?v=13',
   quartoIndividualTV:      'img/frigobar.jpg?v=13',
   quartoIndividualBanheiro:'img/banheiro-solteiro.jpg?v=13',
-  quartoCasalDuplo:        'img/quarto-casal-2.jpg?v=13',
+  quartoCasalDuplo:        'img/quarto-casal.jpg?v=13',
   quartoTriplo:            'img/quarto-triplo.jpg?v=13',
   quartoTriplo2:           'img/quarto-triplo.jpg?v=13',
   quartoTriploTV:          'img/frigobar.jpg?v=13',
   quartoTriploBanheiro:    'img/banheiro-triplo.jpg?v=13',
   quartoTriploChuveiro:    'img/banheiro-triplo.jpg?v=13',
-  quartoSolteiroDuplo:     'img/quarto-casal-2.jpg?v=13',
+  quartoSolteiroDuplo:     'img/quarto_solteiro.png?v=13',
   quartoStandard:          'img/quarto-casal.jpg?v=13',
   quartoStandard2:         'img/quarto-casal.jpg?v=13',
   quartoSuperior:    'https://images.unsplash.com/photo-1611892440504-42a792e24d32?ixlib=rb-4.0.3&auto=format&fit=crop&w=1400&q=80',
