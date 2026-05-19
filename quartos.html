@@ -82,35 +82,69 @@
   await DB.load();
   SITE.init('quartos');
 
-  const all = DB.rooms();
-  const byTipo = {};
-  all.forEach(r => { if (!byTipo[r.tipo]) byTipo[r.tipo] = r; });
-  const tipos = Object.values(byTipo);
+  const categorias = [
+    {
+      tipo: 'Solteiro',
+      camas: '1 cama de solteiro individual',
+      preco: 150,
+      descricao: 'Ideal para viajantes individuais. Oferece conforto, privacidade e praticidade com enxoval premium, ar-condicionado, TV de tela plana e Wi-Fi de alta velocidade.',
+      amenities: ['Wi-Fi', 'Ar condicionado', 'TV', 'Enxoval premium', 'Mesa de trabalho'],
+      img: IMG.galeriaPoltronas,
+      capacidade: 1
+    },
+    {
+      tipo: 'Casal',
+      camas: '1 cama de casal, ocupação individual',
+      preco: 190,
+      descricao: 'Excelente opção para viajantes sozinhos que preferem mais espaço ou para casais. Cama de casal confortável, decoração clássica, ambiente climatizado e enxoval premium.',
+      amenities: ['Wi-Fi', 'Ar condicionado', 'TV', 'Enxoval premium', 'Frigobar'],
+      img: IMG.galeriaIluminacao,
+      capacidade: 2
+    },
+    {
+      tipo: 'Casal Duplo',
+      camas: 'Cama de casal ou duas camas de solteiro',
+      preco: 270,
+      descricao: 'Espaço flexível ideal para duas pessoas. Pode ser configurado de acordo com a sua preferência: uma confortável cama de casal ou duas camas de solteiro individuais.',
+      amenities: ['Wi-Fi', 'Ar condicionado', 'TV', 'Enxoval premium', 'Frigobar'],
+      img: IMG.galeriaFrutas,
+      capacidade: 2
+    },
+    {
+      tipo: 'Triplo / Família',
+      camas: 'Cama de casal + cama de solteiro',
+      preco: 310,
+      descricao: 'Perfeito para pequenas famílias ou grupos de três pessoas. Amplo, confortável e com total comodidade. Inclui enxoval premium, ar-condicionado, TV e frigobar.',
+      amenities: ['Wi-Fi', 'Ar condicionado', 'TV', 'Frigobar', 'Enxoval premium', 'Espaço amplo'],
+      img: IMG.galeriaDoces,
+      capacidade: 3
+    }
+  ];
 
-  document.getElementById('roomsList').innerHTML = tipos.map(r => {
-    const cnt = all.filter(x => x.tipo === r.tipo).length;
-    return `
-      <div class="room-row">
-        ${window.renderInlineCarousel(r, 'badge')}
-        <div>
-          <span class="section-eyebrow" style="padding: 0; display: inline-block;">${r.tipo}</span>
-          <h2 style="margin-top:14px;">${r.tipo}</h2>
-          <div class="meta-line">
-            <span>👤 Até ${r.capacidade} pessoas</span>
-            <span>✦ ${cnt} ${cnt === 1 ? 'quarto disponível' : 'quartos disponíveis'}</span>
-            <span>★ Premium</span>
-          </div>
-          <p style="color: var(--cinza-texto); line-height: 1.8;">${r.descricao}</p>
-          <div class="amen-list">
-            ${r.amenities.map(a => `<span class="amenity">${a}</span>`).join('')}
-          </div>
-          <div class="price-line">
-            <div class="price">${DB.formatBRL(r.preco)} <small>/ diária</small></div>
-            <a href="reservar.html?tipo=${encodeURIComponent(r.tipo)}" class="btn btn-dark btn-sm">Reservar este quarto</a>
-          </div>
+  document.getElementById('roomsList').innerHTML = categorias.map(c => `
+    <div class="room-row">
+      <div class="room-row-photo" style="background-image: url('${c.img}');">
+        <span class="badge">Premium</span>
+      </div>
+      <div>
+        <span class="section-eyebrow" style="padding: 0; display: inline-block;">${c.tipo}</span>
+        <h2 style="margin-top:14px;">Quarto ${c.tipo}</h2>
+        <div class="meta-line">
+          <span>👤 Até ${c.capacidade} ${c.capacidade === 1 ? 'pessoa' : 'pessoas'}</span>
+          <span>★ Premium</span>
+          <span>✦ Conforto Garantido</span>
         </div>
-      </div>`;
-  }).join('');
+        <p style="color: var(--cinza-texto); line-height: 1.8;">${c.descricao}</p>
+        <p style="font-size:0.9rem; color:var(--marrom); margin-top:8px;"><strong>Configuração:</strong> ${c.camas}</p>
+        <div class="amen-list">
+          ${c.amenities.map(a => `<span class="amenity">${a}</span>`).join('')}
+        </div>
+        <div class="price-line">
+          <div class="price"><small>a partir de</small> ${DB.formatBRL(c.preco)} <small>/ diária</small></div>
+          <a href="reservar.html?tipo=${encodeURIComponent(c.tipo)}" class="btn btn-dark btn-sm">Reservar este quarto</a>
+        </div>
+      </div>
+    </div>`).join('');
 })();
 </script>
 </body>

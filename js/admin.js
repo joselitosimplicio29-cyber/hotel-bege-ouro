@@ -14,6 +14,25 @@ const App = {
   },
   can(view) { return this.perms[this.user?.perfil]?.includes(view); },
 
+  PRECOS: {
+    solteiro_1p: 150,
+    casal_1p:    190,
+    duplo_2p:    270,
+    triplo_3p:   310,
+  },
+  getDailyRate(room, hospedes) {
+    if (!room) return 0;
+    if (room.tipo === 'solteiro' && hospedes === 1) return this.PRECOS.solteiro_1p;
+    if (room.tipo === 'casal' && hospedes === 1) return this.PRECOS.casal_1p;
+    if (['casal', 'duplo_solteiro', 'triplo'].includes(room.tipo) && hospedes === 2) return this.PRECOS.duplo_2p;
+    if (room.tipo === 'triplo' && hospedes === 1) return this.PRECOS.casal_1p;
+    if (room.tipo === 'triplo' && hospedes >= 3) return this.PRECOS.triplo_3p;
+    if (hospedes === 1 && room.preco_1p) return room.preco_1p;
+    if (hospedes === 2 && room.preco_2p) return room.preco_2p;
+    if (hospedes >= 3 && room.preco_3p) return room.preco_3p;
+    return room.preco || 0;
+  },
+
   /* ===== Helpers de Label ===== */
   statusLabel(s) {
     const map = {
@@ -421,6 +440,7 @@ const App = {
         </div>
       </div>`;
     const foot = `
+      <div id="nrResumo" style="flex:1;text-align:left;font-weight:600;color:var(--primaria);"></div>
       <button class="btn btn-outline" onclick="App.closeModal()">Cancelar</button>
       <button class="btn btn-primary" onclick="App.saveNewReserva()">Salvar reserva</button>`;
     this.openModal('Nova reserva manual', body, foot);
@@ -428,6 +448,27 @@ const App = {
     document.getElementById('nrCliente').addEventListener('change', e => {
       document.getElementById('newCliBlock').style.display = e.target.value === '__new' ? '' : 'none';
     });
+
+    const updateCalc = () => {
+      const qid = document.getElementById('nrQuarto').value;
+      const h = Number(document.getElementById('nrHospedes').value) || 1;
+      const ent = document.getElementById('nrEntrada').value;
+      const sai = document.getElementById('nrSaida').value;
+      const resumo = document.getElementById('nrResumo');
+      if (!qid || !ent || !sai) { resumo.innerHTML = ''; return; }
+      const d = DB.diffDays(ent, sai);
+      if (d < 1) { resumo.innerHTML = 'Datas inválidas'; return; }
+      const r = DB.room(qid);
+      if (!r) return;
+      const daily = this.getDailyRate(r, h);
+      const total = daily * d;
+      resumo.innerHTML = `Diária: ${DB.formatBRL(daily)} x ${d} noite(s) = Total: ${DB.formatBRL(total)}`;
+    };
+
+    ['nrQuarto', 'nrHospedes', 'nrEntrada', 'nrSaida'].forEach(id => {
+      document.getElementById(id).addEventListener('change', updateCalc);
+    });
+    updateCalc();
   },
 
   async saveNewReserva() {
@@ -457,10 +498,11 @@ const App = {
     }
 
     const room = DB.room(quartoId);
-    const total = room.preco * diarias;
+    const daily = this.getDailyRate(room, hospedes);
+    const total = daily * diarias;
     const r = await DB.saveReservation({
       clienteId, quartoId, entrada, saida, diarias, hospedes,
-      valorDiaria: room.preco, valorTotal: total, valorPago: pago, valorRestante: total - pago,
+      valorDiaria: daily, valorTotal: total, valorPago: pago, valorRestante: total - pago,
       formaPagamento: forma,
       statusPagamento: pago >= total ? 'pago' : pago > 0 ? 'parcial' : 'pendente',
       statusReserva: pago >= total ? 'confirmada' : 'pendente',
@@ -771,35 +813,50 @@ const App = {
      QUARTOS — CRUD
      ============================================================ */
   view_quartos() {
-    const rooms = DB.rooms();
+    const rData = DB.rooms();
     const html = `
       <div class="card">
         <div class="card-head">
-          <h2>Cadastro de quartos (${rooms.length})</h2>
+          <h2>Cadastro de quartos (${rData.length})</h2>
           ${this.user.perfil === 'admin' ? '<button class="btn btn-primary" onclick="App.openRoomForm()">+ Novo quarto</button>' : ''}
         </div>
         <div class="card-body tight">
           <table class="table">
-            <thead><tr><th>Número</th><th>Tipo</th><th>Capacidade</th><th>Diária</th><th>Status</th><th></th></tr></thead>
+            <thead>
+              <tr>
+                <th>Número</th>
+                <th>Andar</th>
+                <th>Tipo / Camas</th>
+                <th>Cap.</th>
+                <th>Status</th>
+                <th>Preços (1p/2p/3p)</th>
+                ${this.user.perfil === 'admin' ? '<th style="text-align:right">Ações</th>' : ''}
+              </tr>
+            </thead>
             <tbody>
-              ${rooms.map(r => `
+              ${rData.map(r => `
                 <tr>
                   <td><strong>${r.numero}</strong></td>
-                  <td>${r.tipo}</td>
-                  <td>${r.capacidade}</td>
-                  <td>${DB.formatBRL(r.preco)}</td>
-                  <td><span class="pill pill-${r.status === 'disponivel' ? 'confirmada' : r.status === 'ocupado' ? 'cancelada' : r.status === 'reservado' ? 'parcial' : 'finalizada'}">${r.status}</span></td>
-                  <td class="actions">
-                    <button class="btn btn-outline btn-sm" onclick="App.openRoomDetail('${r.id}')">Detalhe</button>
-                    ${this.user.perfil === 'admin' ? `<button class="btn btn-outline btn-sm" onclick="App.openRoomForm('${r.id}')">Editar</button>` : ''}
+                  <td>${r.andar || ''}</td>
+                  <td><span class="badge gray">${r.tipo}</span><br><small class="text-muted">${r.camas || ''}</small></td>
+                  <td>👤 ${r.capacidade}</td>
+                  <td><span class="pill pill-${r.status === 'disponivel' ? 'confirmada' : r.status === 'ocupado' ? 'cancelada' : r.status === 'reservado' ? 'parcial' : 'finalizada'}">${this.statusLabel(r.status)}</span></td>
+                  <td style="font-size:0.85em;color:var(--cinza-texto);">
+                    1p: ${r.preco_1p ? DB.formatBRL(r.preco_1p) : '-'}<br>
+                    2p: ${r.preco_2p ? DB.formatBRL(r.preco_2p) : '-'}<br>
+                    3p: ${r.preco_3p ? DB.formatBRL(r.preco_3p) : '-'}
                   </td>
+                  ${this.user.perfil === 'admin' ? `
+                  <td style="text-align:right">
+                    <button class="btn btn-outline btn-sm" onclick="App.openRoomForm('${r.id}')">Editar</button>
+                  </td>` : ''}
                 </tr>
               `).join('')}
             </tbody>
           </table>
         </div>
       </div>`;
-    this.render(html, 'Quartos');
+    this.render(html, 'Cadastro de quartos');
   },
 
   openRoomForm(id = null) {

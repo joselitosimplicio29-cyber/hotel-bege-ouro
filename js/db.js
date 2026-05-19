@@ -58,15 +58,30 @@ const DB = {
 
   /* ===== Bootstrap: carrega tudo do Supabase para o cache ===== */
   async load() {
-    const [roomsRes, clientsRes, reservsRes, consuRes, paysRes, profRes] = await Promise.all([
-      _sb.from('rooms').select('*').order('numero'),
+    const QUARTOS_FIXOS = [
+      { id: 'q01', numero: "01", andar: "Térreo", tipo: "casal", camas: "1 cama de casal", capacidade: 2, preco: 190, preco_1p: 190, preco_2p: 270, preco_3p: null, status: "disponivel", descricao: "Quarto aconchegante com cama de casal.", amenities: ["Wi-Fi", "Ar condicionado", "TV"] },
+      { id: 'q02', numero: "02", andar: "Térreo", tipo: "duplo_solteiro", camas: "2 camas de solteiro", capacidade: 2, preco: 150, preco_1p: 150, preco_2p: 270, preco_3p: null, status: "disponivel", descricao: "Quarto com duas camas de solteiro.", amenities: ["Wi-Fi", "Ar condicionado", "TV"] },
+      { id: 'q03', numero: "03", andar: "Térreo", tipo: "triplo", camas: "1 cama de casal + 1 solteiro", capacidade: 3, preco: 190, preco_1p: 190, preco_2p: 270, preco_3p: 310, status: "disponivel", descricao: "Quarto triplo com cama de casal e solteiro.", amenities: ["Wi-Fi", "Ar condicionado", "TV"] },
+      { id: 'q04', numero: "04", andar: "Térreo", tipo: "duplo_solteiro", camas: "2 camas de solteiro", capacidade: 2, preco: 150, preco_1p: 150, preco_2p: 270, preco_3p: null, status: "disponivel", descricao: "Quarto duplo solteiro espaçoso.", amenities: ["Wi-Fi", "Ar condicionado", "TV"] },
+      { id: 'q05', numero: "05", andar: "Térreo", tipo: "casal", camas: "1 cama de casal", capacidade: 2, preco: 190, preco_1p: 190, preco_2p: 270, preco_3p: null, status: "disponivel", descricao: "Conforto em quarto de casal.", amenities: ["Wi-Fi", "Ar condicionado", "TV"] },
+      { id: 'q07', numero: "07", andar: "Térreo", tipo: "solteiro", camas: "1 cama de solteiro", capacidade: 1, preco: 150, preco_1p: 150, preco_2p: null, preco_3p: null, status: "disponivel", descricao: "Quarto prático para viajante solo.", amenities: ["Wi-Fi", "Ar condicionado", "TV"] },
+      { id: 'q08', numero: "08", andar: "Térreo", tipo: "casal", camas: "1 cama de casal", capacidade: 2, preco: 190, preco_1p: 190, preco_2p: 270, preco_3p: null, status: "disponivel", descricao: "Quarto de casal agradável.", amenities: ["Wi-Fi", "Ar condicionado", "TV"] },
+      { id: 'q101', numero: "101", andar: "1º andar", tipo: "triplo", camas: "1 cama de casal + 1 solteiro", capacidade: 3, preco: 190, preco_1p: 190, preco_2p: 270, preco_3p: 310, status: "disponivel", descricao: "Quarto triplo superior com excelente iluminação.", amenities: ["Wi-Fi", "Ar condicionado", "TV", "Frigobar"] },
+      { id: 'q102', numero: "102", andar: "1º andar", tipo: "casal", camas: "1 cama de casal", capacidade: 2, preco: 190, preco_1p: 190, preco_2p: 270, preco_3p: null, status: "disponivel", descricao: "Quarto de casal com janela ampla.", amenities: ["Wi-Fi", "Ar condicionado", "TV"] },
+      { id: 'q103', numero: "103", andar: "1º andar", tipo: "casal", camas: "1 cama de casal", capacidade: 2, preco: 190, preco_1p: 190, preco_2p: 270, preco_3p: null, status: "disponivel", descricao: "Aconchego e tranquilidade no primeiro andar.", amenities: ["Wi-Fi", "Ar condicionado", "TV"] },
+      { id: 'q104', numero: "104", andar: "1º andar", tipo: "casal", camas: "1 cama de casal", capacidade: 2, preco: 190, preco_1p: 190, preco_2p: 270, preco_3p: null, status: "disponivel", descricao: "Quarto padrão casal.", amenities: ["Wi-Fi", "Ar condicionado", "TV"] },
+      { id: 'q106', numero: "106", andar: "1º andar", tipo: "casal", camas: "1 cama de casal", capacidade: 2, preco: 190, preco_1p: 190, preco_2p: 270, preco_3p: null, status: "disponivel", descricao: "Quarto iluminado e confortável.", amenities: ["Wi-Fi", "Ar condicionado", "TV"] },
+      { id: 'q107', numero: "107", andar: "1º andar", tipo: "casal", camas: "1 cama de casal", capacidade: 2, preco: 190, preco_1p: 190, preco_2p: 270, preco_3p: null, status: "disponivel", descricao: "Conforto clássico para duas pessoas.", amenities: ["Wi-Fi", "Ar condicionado", "TV"] },
+      { id: 'q108', numero: "108", andar: "1º andar", tipo: "casal", camas: "1 cama de casal", capacidade: 2, preco: 190, preco_1p: 190, preco_2p: 270, preco_3p: null, status: "disponivel", descricao: "Quarto com bela vista.", amenities: ["Wi-Fi", "Ar condicionado", "TV"] },
+    ];
+    const [clientsRes, reservsRes, consuRes, paysRes, profRes] = await Promise.all([
       _sb.from('clients').select('*').order('nome'),
       _sb.from('reservations').select('*').order('criada_em', { ascending: false }),
       _sb.from('consumptions').select('*').order('data_hora', { ascending: false }),
       _sb.from('payments').select('*').order('data', { ascending: false }),
       _sb.from('profiles').select('*'),
     ]);
-    _cache.rooms        = (roomsRes.data   || []);
+    _cache.rooms        = QUARTOS_FIXOS;
     _cache.clients      = (clientsRes.data || []).map(_mapClient);
     _cache.reservations = (reservsRes.data || []).map(_mapReservation);
     _cache.consumptions = (consuRes.data   || []).map(_mapConsumption);
@@ -81,12 +96,6 @@ const DB = {
     if (this._realtimeStarted) return;
     this._realtimeStarted = true;
     _sb.channel('hotel-live')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'rooms' }, async () => {
-        const { data } = await _sb.from('rooms').select('*').order('numero');
-        _cache.rooms = data || [];
-        if (window.App?.view === 'mapa') window.App.view_mapa?.();
-        if (window.App?.view === 'quartos') window.App.view_quartos?.();
-      })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'reservations' }, async () => {
         const { data } = await _sb.from('reservations').select('*').order('criada_em', { ascending: false });
         _cache.reservations = (data || []).map(_mapReservation);
@@ -155,23 +164,15 @@ const DB = {
   rooms() { return _cache.rooms; },
   room(id) { return _cache.rooms.find(r => r.id === id); },
   async saveRoom(room) {
-    const p = { id: room.id || undefined, numero: room.numero, tipo: room.tipo, capacidade: room.capacidade, preco: room.preco, status: room.status, descricao: room.descricao, amenities: room.amenities, updated_at: new Date().toISOString() };
-    if (room.id) {
-      await _sb.from('rooms').update(p).eq('id', room.id);
-      const idx = _cache.rooms.findIndex(r => r.id === room.id);
-      if (idx >= 0) _cache.rooms[idx] = { ..._cache.rooms[idx], ...p };
-    } else {
-      p.id = 'q' + Date.now().toString(36);
-      const { data } = await _sb.from('rooms').insert(p).select().single();
-      if (data) _cache.rooms.push(data);
-      return data;
-    }
+    // Rooms are hardcoded, saving is disabled to avoid Supabase errors
     return room;
   },
-  async deleteRoom(id) { await _sb.from('rooms').delete().eq('id', id); _cache.rooms = _cache.rooms.filter(r => r.id !== id); },
+  async deleteRoom(id) { 
+    // Disabled
+  },
   async setRoomStatus(id, status) {
-    await _sb.from('rooms').update({ status, updated_at: new Date().toISOString() }).eq('id', id);
-    const r = _cache.rooms.find(x => x.id === id); if (r) r.status = status;
+    const r = _cache.rooms.find(x => x.id === id); 
+    if (r) r.status = status;
   },
 
   /* ===== Clientes ===== */
@@ -261,7 +262,7 @@ const DB = {
       const ativa = _cache.reservations.find(r => r.quartoId === q.id && !['cancelada','finalizada'].includes(r.statusReserva) && r.entrada <= today && r.saida > today);
       const futura = _cache.reservations.find(r => r.quartoId === q.id && ['confirmada','pendente'].includes(r.statusReserva) && r.entrada > today);
       const ns = ativa ? (ativa.statusReserva === 'em_hospedagem' ? 'ocupado' : 'reservado') : futura ? 'reservado' : 'disponivel';
-      if (q.status !== ns) { q.status = ns; await _sb.from('rooms').update({ status: ns, updated_at: new Date().toISOString() }).eq('id', q.id); }
+      if (q.status !== ns) { q.status = ns; }
     }
   },
 
