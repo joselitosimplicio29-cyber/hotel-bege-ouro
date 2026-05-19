@@ -195,7 +195,7 @@ img:hover { filter: sepia(0) contrast(1) saturate(1); }
   position: absolute; inset: 0;
   background-size: cover;
   background-position: center;
-  background-image: url('../img/fachada.png');
+  background-image: url('../img/foto-capa.jpg');
 }
 .hero-bg::after {
   content: '';
