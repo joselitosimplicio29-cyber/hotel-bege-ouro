@@ -111,6 +111,19 @@ const DB = {
 
   /* ===== Auth ===== */
   async login(email, senha) {
+    // Usuários reais configurados conforme solicitado
+    const credenciaisReais = [
+      { id: 'admin-hardcoded', email: 'begeourohotel@hotmail.com', senha: 'BegeOuro@2026', nome: 'Administrador', perfil: 'admin' },
+      { id: 'recepcao-hardcoded', email: 'recepcao@begeouro.com', senha: 'recepcao2026', nome: 'Recepção', perfil: 'funcionario' },
+      { id: 'financeiro-hardcoded', email: 'financeiro@begeouro.com', senha: 'Financeiro@2026', nome: 'Financeiro', perfil: 'financeiro' }
+    ];
+    const userLocal = credenciaisReais.find(u => u.email === email && u.senha === senha);
+    if (userLocal) {
+      _cache._currentUser = { id: userLocal.id, email: userLocal.email, nome: userLocal.nome, perfil: userLocal.perfil };
+      localStorage.setItem('hc_user', JSON.stringify(_cache._currentUser));
+      return _cache._currentUser;
+    }
+
     const { data, error } = await _sb.auth.signInWithPassword({ email, password: senha });
     if (error) return null;
     const { data: prof } = await _sb.from('profiles').select('*').eq('id', data.user.id).single();
@@ -118,9 +131,18 @@ const DB = {
     _cache._currentUser = { id: data.user.id, email: data.user.email, ...prof };
     return _cache._currentUser;
   },
-  async logout() { await _sb.auth.signOut(); _cache._currentUser = null; },
+  async logout() { 
+    localStorage.removeItem('hc_user');
+    await _sb.auth.signOut(); 
+    _cache._currentUser = null; 
+  },
   async currentUser() {
     if (_cache._currentUser) return _cache._currentUser;
+    const hcStr = localStorage.getItem('hc_user');
+    if (hcStr) {
+      _cache._currentUser = JSON.parse(hcStr);
+      return _cache._currentUser;
+    }
     const { data: { user } } = await _sb.auth.getUser();
     if (!user) return null;
     const { data: prof } = await _sb.from('profiles').select('*').eq('id', user.id).single();

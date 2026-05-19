@@ -31,10 +31,23 @@
       <a href="quartos.html" class="btn btn-outline">Conhecer os quartos</a>
     </div>
   </div>
-  <div class="hero-meta">
-    <div><span class="num">4.9</span><span class="lbl">Avaliação</span></div>
-    <div><span class="num">10+</span><span class="lbl">Anos</span></div>
-    <div><span class="num">98%</span><span class="lbl">Satisfação</span></div>
+  <div class="luxury-banner">
+    <div class="luxury-banner-inner">
+      <div class="luxury-banner-block">
+        <div class="luxury-banner-icon">★</div>
+        <div class="luxury-banner-title">EXCELÊNCIA</div>
+        <div class="luxury-banner-subtitle">em hospitalidade</div>
+      </div>
+      <div class="luxury-banner-block luxury-banner-center">
+        <div class="luxury-banner-title">Sua melhor estadia no Sertão</div>
+        <div class="luxury-banner-subtitle">H O T E L &nbsp; O U R O B E G E</div>
+      </div>
+      <div class="luxury-banner-block">
+        <div class="luxury-banner-icon">✦</div>
+        <div class="luxury-banner-title">CONFORTO</div>
+        <div class="luxury-banner-subtitle">e sofisticação</div>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -212,19 +225,15 @@
     </article>
   `).join('');
 
-  /* galeria preview (8 fotos) */
+  /* galeria preview (4 fotos) */
   const galleryItems = [
-    { url: IMG.quartoSuiteMaster, label: 'Suíte Master', cls: 'tall' },
-    { url: IMG.quartoIndividual, label: 'Quarto Individual', cls: '' },
-    { url: IMG.cafe, label: 'Café da manhã', cls: '' },
-    { url: IMG.quartoSuperior, label: 'Quarto Superior', cls: '' },
-    { url: IMG.piscina, label: 'Piscina', cls: '' },
-    { url: IMG.lobby, label: 'Lobby principal', cls: 'wide' },
-    { url: IMG.restaurante, label: 'Restaurante', cls: 'wide' },
-    { url: IMG.jardim, label: 'Jardim & deck', cls: '' },
+    { url: IMG.galeriaFrutas, label: 'Mesa de Frutas', cls: 'tall' },
+    { url: IMG.galeriaPoltronas, label: 'Área de Estar', cls: 'wide' },
+    { url: IMG.galeriaIluminacao, label: 'Iluminação Decorativa', cls: 'tall' },
+    { url: IMG.galeriaDoces, label: 'Mesa de Doces e Bolos', cls: 'wide' },
   ];
   document.getElementById('galleryPreview').innerHTML = galleryItems.map(g => `
-    <div class="gallery-item ${g.cls}" style="background-image: url('${g.url}');" role="img" aria-label="${g.lbl}">
+    <div class="gallery-item ${g.cls}" style="background-image: url('${g.url}');" role="img" aria-label="${g.label}">
       <span class="label">${g.label}</span>
     </div>
   `).join('');

@@ -41,6 +41,12 @@ const IMG = {
   avatar1: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80',
   avatar2: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80',
   avatar3: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80',
+  
+  /* Novas fotos da Galeria */
+  galeriaFrutas: 'img/galeria_frutas.png?v=1',
+  galeriaDoces: 'img/galeria_doces.png?v=1',
+  galeriaPoltronas: 'img/galeria_poltronas.png?v=1',
+  galeriaIluminacao: 'img/galeria_iluminacao.png?v=1',
 };
 
 /* Mapeia o tipo do quarto à imagem */

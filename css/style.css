@@ -195,7 +195,7 @@ img:hover { filter: sepia(0) contrast(1) saturate(1); }
   position: absolute; inset: 0;
   background-size: cover;
   background-position: center;
-  background-image: url('https://images.unsplash.com/photo-1566073771259-6a8506099945?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80');
+  background-image: url('../img/fachada.png');
 }
 .hero-bg::after {
   content: '';
@@ -250,20 +250,93 @@ img:hover { filter: sepia(0) contrast(1) saturate(1); }
 }
 .hero-actions { display: flex; gap: 16px; flex-wrap: wrap; }
 
-.hero-meta {
+/* ===== LUXURY BANNER ===== */
+.luxury-banner {
   position: absolute;
-  bottom: 50px;
-  right: 28px;
-  z-index: 3;
-  display: flex; gap: 30px;
-  background: rgba(26, 19, 13, 0.65);
-  backdrop-filter: blur(10px);
-  padding: 22px 32px;
-  border-left: 3px solid var(--dourado);
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background: linear-gradient(90deg, #1a0f00 0%, #3d2200 50%, #1a0f00 100%);
+  border-top: 1px solid #D4AF37;
+  border-bottom: 1px solid #D4AF37;
+  z-index: 10;
 }
-.hero-meta div { color: var(--creme); }
-.hero-meta .num { font-family: 'Playfair Display', serif; font-size: 1.6rem; color: var(--dourado-claro); display: block; line-height: 1; }
-.hero-meta .lbl { font-size: 0.7rem; letter-spacing: 0.16em; text-transform: uppercase; color: rgba(250, 246, 238, 0.7); margin-top: 6px; display: block; }
+
+.luxury-banner-inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px 28px;
+}
+
+.luxury-banner-block {
+  flex: 1;
+  text-align: center;
+  padding: 0 30px;
+}
+
+.luxury-banner-block:not(:last-child) {
+  border-right: 1px solid rgba(212, 175, 55, 0.3);
+}
+
+.luxury-banner-icon {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.8rem;
+  color: #D4AF37;
+  margin-bottom: 8px;
+  line-height: 1;
+}
+
+.luxury-banner-title {
+  font-family: 'Playfair Display', serif;
+  color: #f5e6c8;
+  font-size: 1.25rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 4px;
+}
+
+.luxury-banner-subtitle {
+  font-family: 'Inter', sans-serif;
+  color: #c8a96e;
+  font-size: 0.75rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.luxury-banner-center .luxury-banner-title {
+  color: #D4AF37;
+  font-size: 1.7rem;
+  text-transform: none;
+  letter-spacing: 0;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.luxury-banner-center .luxury-banner-subtitle {
+  letter-spacing: 0.4em;
+  color: #f5e6c8;
+  font-size: 0.8rem;
+}
+
+@media (max-width: 900px) {
+  .luxury-banner-inner {
+    flex-direction: column;
+    padding: 30px 20px;
+    gap: 30px;
+  }
+  .luxury-banner-block:not(:last-child) {
+    border-right: none;
+    border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+    padding-bottom: 30px;
+  }
+  .hero-inner {
+    padding-bottom: 180px;
+  }
+}
 
 /* ===== BOTÕES ===== */
 .btn {

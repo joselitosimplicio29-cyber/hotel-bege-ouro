@@ -9,7 +9,7 @@ const App = {
   /* ===== Permissões ===== */
   perms: {
     admin: ['inicio','mapa','reservas','checkin','consumo','quartos','clientes','pagamentos','relatorios'],
-    funcionario: ['inicio','mapa','reservas','checkin','consumo','quartos','clientes'],
+    funcionario: ['inicio','mapa','reservas','checkin','consumo','clientes'],
     financeiro: ['inicio','pagamentos','relatorios','reservas'],
   },
   can(view) { return this.perms[this.user?.perfil]?.includes(view); },
