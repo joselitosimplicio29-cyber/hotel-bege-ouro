@@ -482,32 +482,22 @@ async function confirmar(){
   }
 
   try {
-    // Tenta criar/encontrar o cliente; se falhar, continua sem clienteId
-    let clienteId = null;
-    try {
-      const cli = await DB.findOrCreateClient(state.cliente);
-      if (cli && cli.id) clienteId = cli.id;
-    } catch(cliErr) {
-      console.warn('Aviso: não foi possível salvar cliente no banco. Continuando...', cliErr);
-    }
-
-    const reserva = {
-      clienteId: clienteId,
-      quartoId: room.id,
-      entrada: state.entrada, saida: state.saida,
-      diarias: state.diarias, hospedes: state.hospedes,
+    // Chama RPC segura — toda a lógica (find/create cliente + insert reserva)
+    // roda dentro do banco com SECURITY DEFINER. Anon não toca em PII de terceiros.
+    const created = await DB.createReservationOnline({
+      nome:        state.cliente.nome,
+      cpf:         state.cliente.cpf,
+      telefone:    state.cliente.telefone,
+      email:       state.cliente.email,
+      quartoId:    room.id,
+      entrada:     state.entrada,
+      saida:       state.saida,
+      diarias:     state.diarias,
+      hospedes:    state.hospedes,
       valorDiaria: precoPorHospedes(room, state.hospedes),
-      valorTotal: state.totalFinal,
-      valorPago: 0,
-      valorRestante: state.totalFinal,
-      formaPagamento: 'whatsapp',
-      statusPagamento: 'pendente',
-      statusReserva: 'pendente',
-      origem: 'online',
-      observacoes: `Nome: ${state.cliente.nome} | Tel: ${state.cliente.telefone} | CPF: ${state.cliente.cpf} | Email: ${state.cliente.email}` + (state.cliente.obs ? ` | ${state.cliente.obs}` : ''),
-    };
-
-    const created = await DB.saveReservation(reserva);
+      valorTotal:  state.totalFinal,
+      observacoes: state.cliente.obs || null,
+    });
     irParaWhatsApp(created.codigo);
 
   } catch(err) {

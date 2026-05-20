@@ -111,21 +111,47 @@ const DB = {
       return;
     }
 
+    // Detecta se usuário tem sessão (admin) ou está como anônimo (cliente público)
+    let isAuth = false;
     try {
-      const [clientsRes, reservsRes, consuRes, paysRes, profRes] = await Promise.all([
-        _withTimeout(_sb.from('clients').select('*').order('nome')),
-        _withTimeout(_sb.from('reservations').select('*').order('criada_em', { ascending: false })),
-        _withTimeout(_sb.from('consumptions').select('*').order('data_hora', { ascending: false })),
-        _withTimeout(_sb.from('payments').select('*').order('data', { ascending: false })),
-        _withTimeout(_sb.from('profiles').select('*')),
-      ]);
+      const { data: { user } } = await _sb.auth.getUser();
+      isAuth = !!user;
+    } catch (_) {
+      isAuth = false;
+    }
 
-      _cache.clients      = (clientsRes.data || []).map(_mapClient);
-      _cache.reservations = (reservsRes.data || []).map(_mapReservation);
-      _cache.consumptions = (consuRes.data   || []).map(_mapConsumption);
-      _cache.payments     = (paysRes.data    || []).map(_mapPayment);
-      _cache.profiles     = (profRes.data    || []).map(_mapProfile);
-      this._subscribeRealtime();
+    try {
+      if (isAuth) {
+        // ===== Admin autenticado: acesso completo =====
+        const [clientsRes, reservsRes, consuRes, paysRes, profRes] = await Promise.all([
+          _withTimeout(_sb.from('clients').select('*').order('nome')),
+          _withTimeout(_sb.from('reservations').select('*').order('criada_em', { ascending: false })),
+          _withTimeout(_sb.from('consumptions').select('*').order('data_hora', { ascending: false })),
+          _withTimeout(_sb.from('payments').select('*').order('data', { ascending: false })),
+          _withTimeout(_sb.from('profiles').select('*')),
+        ]);
+
+        _cache.clients      = (clientsRes.data || []).map(_mapClient);
+        _cache.reservations = (reservsRes.data || []).map(_mapReservation);
+        _cache.consumptions = (consuRes.data   || []).map(_mapConsumption);
+        _cache.payments     = (paysRes.data    || []).map(_mapPayment);
+        _cache.profiles     = (profRes.data    || []).map(_mapProfile);
+        this._subscribeRealtime();
+      } else {
+        // ===== Público anônimo: só campos de disponibilidade, sem PII =====
+        const { data } = await _withTimeout(
+          _sb.from('reservations_availability').select('*')
+        );
+        _cache.reservations = (data || []).map(r => ({
+          id: r.id,
+          quartoId: r.quarto_id,
+          entrada: r.entrada,
+          saida: r.saida,
+          statusReserva: r.status_reserva,
+          // campos PII propositalmente ausentes
+        }));
+        // clients/payments/consumptions/profiles ficam vazios (anon não pode ler)
+      }
     } catch (err) {
       console.warn('Nao foi possivel carregar os dados remotos. Usando cache local.', err);
     } finally {
@@ -160,48 +186,46 @@ const DB = {
       .subscribe();
   },
 
-  /* ===== Auth ===== */
+  /* ===== Auth (somente via Supabase Auth — sem credenciais hardcoded) ===== */
   async login(email, senha) {
-    // Usuários reais configurados conforme solicitado
-    const credenciaisReais = [
-      { id: 'admin-hardcoded', email: 'begeourohotel@hotmail.com', senha: 'BegeOuro@2026', nome: 'Administrador', perfil: 'admin' },
-      { id: 'recepcao-hardcoded', email: 'recepcao@begeouro.com', senha: 'recepcao2026', nome: 'Recepção', perfil: 'funcionario' },
-      { id: 'financeiro-hardcoded', email: 'financeiro@begeouro.com', senha: 'Financeiro@2026', nome: 'Financeiro', perfil: 'financeiro' }
-    ];
-    const userLocal = credenciaisReais.find(u => u.email === email && u.senha === senha);
-    if (userLocal) {
-      _cache._currentUser = { id: userLocal.id, email: userLocal.email, nome: userLocal.nome, perfil: userLocal.perfil };
-      localStorage.setItem('hc_user', JSON.stringify(_cache._currentUser));
-      return _cache._currentUser;
-    }
-
     if (!_sb) return null;
+    // Limpa qualquer resíduo do antigo sistema hardcoded
+    try { localStorage.removeItem('hc_user'); } catch (_) {}
 
-    const { data, error } = await _sb.auth.signInWithPassword({ email, password: senha });
-    if (error) return null;
+    const { data, error } = await _sb.auth.signInWithPassword({
+      email: String(email || '').trim().toLowerCase(),
+      password: senha,
+    });
+    if (error || !data?.user) return null;
+
     const { data: prof } = await _sb.from('profiles').select('*').eq('id', data.user.id).single();
-    if (!prof) return null;
+    if (!prof) {
+      // Usuário existe no Auth mas não tem profile cadastrado → bloqueia
+      await _sb.auth.signOut();
+      return null;
+    }
     _cache._currentUser = { id: data.user.id, email: data.user.email, ...prof };
     return _cache._currentUser;
   },
-  async logout() { 
-    localStorage.removeItem('hc_user');
-    if (_sb) await _sb.auth.signOut(); 
-    _cache._currentUser = null; 
+
+  async logout() {
+    try { localStorage.removeItem('hc_user'); } catch (_) {}
+    if (_sb) await _sb.auth.signOut();
+    _cache._currentUser = null;
+    _cache.loaded = false; // força recarregar como anon na próxima navegação
   },
+
   async currentUser() {
     if (_cache._currentUser) return _cache._currentUser;
-    const hcStr = localStorage.getItem('hc_user');
-    if (hcStr) {
-      _cache._currentUser = JSON.parse(hcStr);
-      return _cache._currentUser;
-    }
     if (!_sb) return null;
 
+    // SEMPRE valida com o Supabase — nunca confia apenas em localStorage
     const { data: { user } } = await _sb.auth.getUser();
     if (!user) return null;
+
     const { data: prof } = await _sb.from('profiles').select('*').eq('id', user.id).single();
     if (!prof) return null;
+
     _cache._currentUser = { id: user.id, email: user.email, ...prof };
     return _cache._currentUser;
   },
@@ -300,6 +324,55 @@ const DB = {
       await this.refreshRoomStatuses(); return mapped;
     }
   },
+  /**
+   * Cria reserva online (cliente público) via RPC SECURITY DEFINER.
+   * Anon NÃO precisa de SELECT nem INSERT direto em reservations/clients —
+   * tudo passa pela função `create_reservation_online` que valida e retorna só {id, codigo}.
+   * Substitui o antigo findOrCreateClient + saveReservation que vazava PII.
+   */
+  async createReservationOnline(payload) {
+    if (!_sb) {
+      // Fallback local (sem Supabase)
+      const local = {
+        id: _localId('reservation'),
+        codigo: _reservationCode(),
+        ...payload,
+      };
+      _cache.reservations.unshift({
+        id: local.id, quartoId: payload.quartoId,
+        entrada: payload.entrada, saida: payload.saida,
+        statusReserva: 'pendente',
+      });
+      return { id: local.id, codigo: local.codigo };
+    }
+
+    const { data, error } = await _sb.rpc('create_reservation_online', {
+      p_nome:         payload.nome,
+      p_cpf:          payload.cpf || null,
+      p_telefone:     payload.telefone,
+      p_email:        payload.email,
+      p_quarto_id:    payload.quartoId,
+      p_entrada:      payload.entrada,
+      p_saida:        payload.saida,
+      p_diarias:      payload.diarias,
+      p_hospedes:     payload.hospedes,
+      p_valor_diaria: payload.valorDiaria,
+      p_valor_total:  payload.valorTotal,
+      p_observacoes:  payload.observacoes || null,
+    });
+    if (error) {
+      console.error('RPC create_reservation_online falhou:', error);
+      throw error;
+    }
+    // Atualiza cache local (só campos seguros, pra checagem de disponibilidade)
+    _cache.reservations.unshift({
+      id: data?.id, quartoId: payload.quartoId,
+      entrada: payload.entrada, saida: payload.saida,
+      statusReserva: 'pendente',
+    });
+    return { id: data?.id, codigo: data?.codigo };
+  },
+
   async cancelReservation(id) {
     await _sb.from('reservations').update({ status_reserva: 'cancelada' }).eq('id', id);
     const r = _cache.reservations.find(x => x.id === id); if (r) r.statusReserva = 'cancelada';
