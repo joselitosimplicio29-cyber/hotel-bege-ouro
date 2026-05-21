@@ -396,9 +396,8 @@ const DB = {
     const today = new Date().toISOString().slice(0, 10);
     for (const q of _cache.rooms) {
       if (['limpeza','manutencao'].includes(q.status)) continue;
-      // Considera APENAS reservas que cobrem a data de HOJE (entrada <= hoje < saida).
-      // Reservas futuras NÃO bloqueiam o quarto: ele continua "disponivel" e
-      // pode receber novos agendamentos para outras datas no calendário.
+      // Considera apenas reservas que cobrem a data de hoje (entrada <= hoje < saida).
+      // Reservas futuras NAO bloqueiam o quarto: ele segue "disponivel".
       const ativa = _cache.reservations.find(r => r.quartoId === q.id && !['cancelada','finalizada'].includes(r.statusReserva) && r.entrada <= today && r.saida > today);
       const ns = ativa ? (ativa.statusReserva === 'em_hospedagem' ? 'ocupado' : 'reservado') : 'disponivel';
       if (q.status !== ns) { q.status = ns; }
@@ -437,4 +436,8 @@ const DB = {
   formatBRL(v) { return (v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); },
   formatDate(d) { if (!d) return '—'; const x = typeof d === 'string' ? new Date(d + (d.length === 10 ? 'T12:00:00' : '')) : d; return x.toLocaleDateString('pt-BR'); },
   formatDateTime(d) { if (!d) return '—'; return new Date(d).toLocaleString('pt-BR'); },
-  diffDays(d1, d2) { return Math.max(0, Math.round((new Date(d2) -
+  diffDays(d1, d2) { return Math.max(0, Math.round((new Date(d2) - new Date(d1)) / 86400000)); },
+};
+
+window.DB = DB;
+window._sb = _sb;

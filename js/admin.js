@@ -218,8 +218,6 @@ const App = {
                 !['cancelada','finalizada'].includes(x.statusReserva) &&
                 x.entrada <= today && x.saida > today
               );
-              // Próxima reserva futura: NÃO bloqueia o quarto (status segue
-              // "disponivel"), apenas mostra um aviso informativo no card.
               const reservaFutura = !reservaAtiva ? DB.reservations()
                 .filter(x =>
                   x.quartoId === r.id &&
@@ -233,7 +231,7 @@ const App = {
                   <span class="tipo">${r.tipo}</span>
                   <span class="status-badge">${r.status}</span>
                   ${reservaAtiva ? `<div style="margin-top:10px; font-size:0.78rem; color:var(--escuro-suave);">${DB.client(reservaAtiva.clienteId)?.nome.split(' ')[0]}</div>` : ''}
-                  ${reservaFutura ? `<div style="margin-top:10px; font-size:0.72rem; color:var(--cinza-texto);">📅 Próx: ${DB.formatDate(reservaFutura.entrada)}</div>` : ''}
+                  ${reservaFutura ? `<div style="margin-top:10px; font-size:0.72rem; color:var(--cinza-texto);">Proxima reserva: ${DB.formatDate(reservaFutura.entrada)}</div>` : ''}
                 </div>
               `;
             }).join('')}
@@ -1173,4 +1171,21 @@ const App = {
             <thead><tr><th>Quarto</th><th>Tipo</th><th>Reservas</th><th>Faturado</th></tr></thead>
             <tbody>
               ${rooms.map(rm => {
-                const rsvDoMes = reservs.filter(
+                const rsvDoMes = reservs.filter(r => r.quartoId === rm.id && (r.criadaEm||'').slice(0,7) === month);
+                const fat = pgs.filter(p => rsvDoMes.find(r => r.id === p.reservaId) && p.data.slice(0,7) === month).reduce((s,p)=>s+p.valor,0);
+                return `<tr>
+                  <td><strong>${rm.numero}</strong></td>
+                  <td>${rm.tipo}</td>
+                  <td>${rsvDoMes.length}</td>
+                  <td>${DB.formatBRL(fat)}</td>
+                </tr>`;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>`;
+    this.render(html, 'Relatórios financeiros');
+  },
+};
+
+document.addEventListener('DOMContentLoaded', () => App.init());
