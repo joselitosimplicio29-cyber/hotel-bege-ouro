@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Catálogo de Acomodações — Hotel Bege Ouro</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        charcoal: '#1A1A1A',
+        charcoal2: '#2C2620',
+        gold: '#C9A961',
+        goldlt: '#DBC082',
+        golddk: '#A8842E',
+        cream: '#FAF6EE',
+        creme2: '#F1EADD',
+        bege: '#E8DDC8',
+      },
+      fontFamily: {
+        serif: ['"Playfair Display"', 'Georgia', 'serif'],
+        sans: ['Inter', 'sans-serif'],
+      }
+    }
+  }
+}
+</script>
+<style>
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body { background: #4a4a4a; }
+  .page {
+    width: 210mm;
+    min-height: 297mm;
+    margin: 24px auto;
+    background: #fff;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.35);
+  }
+  @page { size: A4; margin: 0; }
+  @media print {
+    body { background: #fff; }
+    .page {
+      margin: 0;
+      box-shadow: none;
+      page-break-after: always;
+    }
+    .page:last-child { page-break-after: auto; }
+  }
+  .eyebrow {
+    letter-spacing: 0.32em;
+    text-transform: uppercase;
+    font-size: 11px;
+    font-weight: 600;
+  }
+</style>
+</head>
+<body class="font-sans text-charcoal">
+
+<!-- ============ PÁGINA 1 — CAPA ============ -->
+<section class="page flex flex-col">
+  <div class="relative h-[62%]">
+    <img src="img/foto-capa.jpg" alt="Hotel Bege Ouro" class="w-full h-full object-cover">
+    <div class="absolute inset-0" style="background:linear-gradient(180deg, rgba(26,26,26,0.45) 0%, rgba(26,26,26,0.15) 45%, rgba(26,26,26,0.92) 100%);"></div>
+    <div class="absolute top-0 left-0 right-0 flex justify-center pt-14">
+      <div class="flex items-center gap-4">
+        <div class="w-16 h-16 rounded-full bg-charcoal border-2 border-gold flex items-center justify-center">
+          <span class="font-serif text-gold text-3xl leading-none">B</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="flex-1 bg-charcoal text-cream flex flex-col items-center justify-center text-center px-16 -mt-1">
+    <p class="eyebrow text-gold mb-6">Catálogo de Acomodações · 2026</p>
+    <h1 class="font-serif text-6xl leading-tight mb-2">Hotel Bege <span class="italic text-gold">Ouro</span></h1>
+    <div class="w-24 h-px bg-gold my-7"></div>
+    <p class="text-base text-bege/80 max-w-md leading-relaxed">
+      Hospitalidade clássica e conforto contemporâneo no coração do Sertão da Bahia.
+    </p>
+    <p class="mt-10 text-sm tracking-widest text-gold/90 uppercase">Ourolândia — Bahia</p>
+  </div>
+</section>
+
+<!-- ============ PÁGINA 2 — APRESENTAÇÃO ============ -->
+<section class="page flex flex-col">
+  <div class="h-[42%]">
+    <img src="img/lobby-real.jpg" alt="Lobby do Hotel Bege Ouro" class="w-full h-full object-cover">
+  </div>
+  <div class="flex-1 px-16 py-12 bg-cream">
+    <p class="eyebrow text-golddk mb-3">Bem-vindo</p>
+    <h2 class="font-serif text-4xl mb-6 text-charcoal">Uma estadia pensada<br>em cada detalhe</h2>
+    <p class="text-[15px] leading-relaxed text-charcoal2/90 mb-4">
+      O Hotel Bege Ouro nasceu da paixão por receber. Cada ambiente foi pensado para acolher:
+      das janelas amplas ao enxoval premium, do café fresco preparado todas as manhãs ao
+      silêncio reconfortante das noites. Aqui, cada hóspede é tratado como visita querida.
+    </p>
+    <p class="text-[15px] leading-relaxed text-charcoal2/90 mb-9">
+      Nossas acomodações combinam decoração clássica, ambientes climatizados e serviço atento —
+      a escolha certa para viagens a trabalho, lazer em casal ou momentos em família.
+    </p>
+    <div class="grid grid-cols-3 gap-5">
+      <div class="border-l-2 border-gold pl-4">
+        <p class="font-serif text-2xl text-golddk">14</p>
+        <p class="text-xs text-charcoal2/70 mt-1 leading-snug">Quartos confortáveis e climatizados</p>
+      </div>
+      <div class="border-l-2 border-gold pl-4">
+        <p class="font-serif text-2xl text-golddk">24h</p>
+        <p class="text-xs text-charcoal2/70 mt-1 leading-snug">Recepção disponível todos os dias</p>
+      </div>
+      <div class="border-l-2 border-gold pl-4">
+        <p class="font-serif text-2xl text-golddk">Incluso</p>
+        <p class="text-xs text-charcoal2/70 mt-1 leading-snug">Café da manhã e Wi-Fi de alta velocidade</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PÁGINA 3 — QUARTOS (Solteiro + Casal Individual) ============ -->
+<section class="page px-14 py-12 bg-white flex flex-col">
+  <div class="text-center mb-8">
+    <p class="eyebrow text-golddk">Nossas acomodações</p>
+    <h2 class="font-serif text-3xl text-charcoal mt-1">Escolha o seu quarto</h2>
+  </div>
+
+  <!-- Quarto Solteiro -->
+  <article class="flex-1 border border-bege rounded-lg overflow-hidden mb-7 flex flex-col">
+    <div class="h-[210px]"><img src="img/quarto-solteiro.jpg" alt="Quarto Solteiro" class="w-full h-full object-cover"></div>
+    <div class="p-6 flex gap-6 bg-cream/40">
+      <div class="flex-1">
+        <div class="flex items-center gap-3 mb-1">
+          <h3 class="font-serif text-2xl text-charcoal">Quarto Solteiro</h3>
+          <span class="text-[11px] tracking-wider uppercase text-golddk border border-gold rounded-full px-2 py-0.5">Até 1 pessoa</span>
+        </div>
+        <p class="text-[11px] text-charcoal2/60 mb-2">1 cama de solteiro individual</p>
+        <p class="text-[13px] leading-relaxed text-charcoal2/85 mb-3">
+          Ideal para viajantes individuais. Oferece conforto, privacidade e praticidade com
+          enxoval premium, ar-condicionado, TV de tela plana e Wi-Fi de alta velocidade.
+        </p>
+        <div class="flex flex-wrap gap-1.5">
+          <span class="text-[11px] text-golddk border border-bege bg-white rounded px-2 py-1">Wi-Fi</span>
+          <span class="text-[11px] text-golddk border border-bege bg-white rounded px-2 py-1">Ar-condicionado</span>
+          <span class="text-[11px] text-golddk border border-bege bg-white rounded px-2 py-1">TV</span>
+          <span class="text-[11px] text-golddk border border-bege bg-white rounded px-2 py-1">Enxoval premium</span>
+          <span class="text-[11px] text-golddk border border-bege bg-white rounded px-2 py-1">Mesa de trabalho</span>
+        </div>
+      </div>
+      <div class="w-36 shrink-0 bg-charcoal text-cream rounded-lg flex flex-col items-center justify-center text-center px-3 py-4">
+        <p class="text-[10px] tracking-widest uppercase text-gold/80">A partir de</p>
+        <p class="font-serif text-3xl text-gold leading-tight mt-1">R$ 150</p>
+        <p class="text-[11px] text-bege/70">por diária</p>
+      </div>
+    </div>
+  </article>
+
+  <!-- Quarto Casal Individual -->
+  <article class="flex-1 border border-bege rounded-lg overflow-hidden flex flex-col">
+    <div class="h-[210px]"><img src="img/quarto-casal.jpg" alt="Quarto Casal" class="w-full h-full object-cover"></div>
+    <div class="p-6 flex gap-6 bg-cream/40">
+      <div class="flex-1">
+        <div class="flex items-center gap-3 mb-1">
+          <h3 class="font-serif text-2xl text-charcoal">Quarto Casal — Individual</h3>
+          <span class="text-[11px] tracking-wider uppercase text-golddk border border-gold rounded-full px-2 py-0.5">Até 1 pessoa</span>
+        </div>
+        <p class="text-[11px] text-charcoal2/60 mb-2">1 cama de casal · ocupação individual</p>
+        <p class="text-[13px] leading-relaxed text-charcoal2/85 mb-3">
+          Excelente opção para viajantes individuais que preferem mais espaço e o conforto de
+          uma cama de casal. Decoração clássica, ambiente climatizado, TV de tela plana e frigobar.
+        </p>
+        <div class="flex flex-wrap gap-1.5">
+          <span class="text-[11px] text-golddk border border-bege bg-white rounded px-2 py-1">Wi-Fi</span>
+          <span class="text-[11px] text-golddk border border-bege bg-white rounded px-2 py-1">Ar-condicionado</span>
+          <span class="text-[11px] text-golddk border border-bege bg-white rounded px-2 py-1">TV</span>
+          <span class="text-[11px] text-golddk border border-bege bg-white rounded px-2 py-1">Enxoval premium</span>
+          <span class="text-[11px] text-golddk border border-bege bg-white rounded px-2 py-1">Frigobar</span>
+        </div>
+      </div>
+      <div class="w-36 shrink-0 bg-charcoal text-cream rounded-lg flex flex-col items-center justify-center text-center px-3 py-4">
+        <p class="text-[10px] tracking-widest uppercase text-gold/80">A partir de</p>
+        <p class="font-serif text-3xl text-gold leading-tight mt-1">R$ 190</p>
+        <p class="text-[11px] text-bege/70">por diária</p>
+      </div>
+    </div>
+  </article>
+</section>
+
+<!-- ============ PÁGINA 4 — QUARTOS (Casal Duplo + Duplo Solteiro) ============ -->
+<section class="page px-14 py-12 bg-white flex flex-col">
+  <!-- Quarto Casal (2 pessoas) -->
+  <article class="flex-1 border border-bege rounded-lg overflow-hidden mb-7 flex flex-col">
+    <div class="h-[210px]"><img src="img/quarto-casal-2.jpg" alt="Quarto Casal duplo" class="w-full h-full object-cover"></div>
+    <div class="p-6 flex gap-6 bg-cream/40">
+      <div class="flex-1">
+        <div class="flex items-center gap-3 mb-1">
+          <h3 class="font-serif text-2xl text-charcoal">Quarto Casal</h3>
+          <span class="text-[11px] tracking-wider uppercase text-golddk border border-gold rounded-full px-2 py-0.5">Até 2 pessoas</span>
+        </div>
+        <p class="text-[11px] text-charcoal2/60 mb-2">1 cama de casal · ocupação dupla</p>
+        <p class="text-[13px] leading-relaxed text-charcoal2/85 mb-3">
+          Ideal para casais. Cama de casal confortável, decoração clássica, ambiente climatizado,
+          TV de tela plana e frigobar para uma estadia completa a dois.
+        </p>
+        <div class="flex flex-wrap gap-1.5">
+          <span class="text-[11px] text-golddk border border-bege bg-white rounded px-2 py-1">Wi-Fi</span>
+          <span class="text-[11px] text-golddk border border-bege bg-white rounded px-2 py-1">Ar-condicionado</span>
+          <span class="text-[11px] text-golddk border border-bege bg-white rounded px-2 py-1">TV</span>
+          <span class="text-[11px] text-golddk border border-bege bg-white rounded px-2 py-1">Enxoval premium</span>
+          <span class="text-[11px] text-golddk border border-bege bg-white rounded px-2 py-1">Frigobar</span>
+        </div>
+      </div>
+      <div class="w-36 shrink-0 bg-charcoal text-cream rounded-lg flex flex-col items-center justify-center text-center px-3 py-4">
+        <p class="text-[10px] tracking-widest uppercase text-gold/80">A partir de</p>
+        <p class="font-serif text-3xl text-gold leading-tight mt-1">R$ 270</p>
+        <p class="text-[11px] text-bege/70">por diária</p>
+      </div>
+    </div>
+  </article>
+
+  <!-- Quarto Duplo Solteiro -->
+  <article class="flex-1 border border-bege rounded-lg overflow-hidden flex flex-col">
+    <div class="h-[210px]"><img src="img/quarto-solteiro.jpg" alt="Quarto Duplo Solteiro" class="w-full h-full object-cover"></div>
+    <div class="p-6 flex gap-6 bg-cream/40">
+      <div class="flex-1">
+        <div class="flex items-center gap-3 mb-1">
+          <h3 class="font-serif text-2xl text-charcoal">Quarto Duplo Solteiro</h3>
+          <span class="text-[11px] tracking-wider uppercase text-golddk border border-gold rounded-full px-2 py-0.5">Até 2 pessoas</span>
+        </div>
+        <p class="text-[11px] text-charcoal2/60 mb-2">2 camas de solteiro individuais</p>
+        <p class="text-[13px] leading-relaxed text-charcoal2/85 mb-3">
+          Espaço excelente para duas pessoas em camas individuais de solteiro. Ambiente
+          climatizado, confortável e prático com TV e frigobar.
+        </p>
+        <div class="flex flex-wrap gap-1.5">
+          <span class="text-[11px] text-golddk border border-bege bg-white rounded px-2 py-1">Wi-Fi</span>
+          <span class="text-[11px] text-golddk border border-bege bg-white rounded px-2 py-1">Ar-condicionado</span>
+          <span class="text-[11px] text-golddk border border-bege bg-white rounded px-2 py-1">TV</span>
+          <span class="text-[11px] text-golddk border border-bege bg-white rounded px-2 py-1">Enxoval premium</span>
+          <span class="text-[11px] text-golddk border border-bege bg-white rounded px-2 py-1">Frigobar</span>
+        </div>
+      </div>
+      <div class="w-36 shrink-0 bg-charcoal text-cream rounded-lg flex flex-col items-center justify-center text-center px-3 py-4">
+        <p class="text-[10px] tracking-widest uppercase text-gold/80">A partir de</p>
+        <p class="font-serif text-3xl text-gold leading-tight mt-1">R$ 270</p>
+        <p class="text-[11px] text-bege/70">por diária</p>
+      </div>
+    </div>
+  </article>
+</section>
+
+<!-- ============ PÁGINA 5 — QUARTO Triplo / Família ============ -->
+<section class="page px-14 py-12 bg-white flex flex-col">
+  <article class="border border-bege rounded-lg overflow-hidden flex flex-col mb-8">
+    <div class="h-[320px]"><img src="img/quarto-triplo.jpg" alt="Quarto Triplo / Família" class="w-full h-full object-cover"></div>
+    <div class="p-7 flex gap-6 bg-cream/40">
+      <div class="flex-1">
+        <div class="flex items-center gap-3 mb-1">
+          <h3 class="font-serif text-3xl text-charcoal">Quarto Triplo / Família</h3>
+          <span class="text-[11px] tracking-wider uppercase text-golddk border border-gold rounded-full px-2 py-0.5">Até 3 pessoas</span>
+        </div>
+        <p class="text-[11px] text-charcoal2/60 mb-2">1 cama de casal + 1 cama de solteiro</p>
+        <p class="text-[14px] leading-relaxed text-charcoal2/85 mb-4">
+          Perfeito para pequenas famílias ou grupos de três pessoas. Amplo, confortável e com
+          total comodidade. Inclui enxoval premium, ar-condicionado, TV e frigobar.
+        </p>
+        <div class="flex flex-wrap gap-1.5">
+          <span class="text-[11px] text-golddk border border-bege bg-white rounded px-2 py-1">Wi-Fi</span>
+          <span class="text-[11px] text-golddk border border-bege bg-white rounded px-2 py-1">Ar-condicionado</span>
+          <span class="text-[11px] text-golddk border border-bege bg-white rounded px-2 py-1">TV</span>
+          <span class="text-[11px] text-golddk border border-bege bg-white rounded px-2 py-1">Frigobar</span>
+          <span class="text-[11px] text-golddk border border-bege bg-white rounded px-2 py-1">Enxoval premium</span>
+          <span class="text-[11px] text-golddk border border-bege bg-white rounded px-2 py-1">Espaço amplo</span>
+        </div>
+      </div>
+      <div class="w-40 shrink-0 bg-charcoal text-cream rounded-lg flex flex-col items-center justify-center text-center px-3 py-5">
+        <p class="text-[10px] tracking-widest uppercase text-gold/80">A partir de</p>
+        <p class="font-serif text-4xl text-gold leading-tight mt-1">R$ 330</p>
+        <p class="text-[11px] text-bege/70">por diária</p>
+      </div>
+    </div>
+  </article>
+
+  <div class="bg-charcoal text-cream rounded-lg px-8 py-7 text-center">
+    <p class="eyebrow text-gold mb-2">Tabela resumida de diárias</p>
+    <div class="grid grid-cols-5 gap-3 mt-4">
+      <div><p class="text-[12px] text-bege/70">Solteiro</p><p class="font-serif text-xl text-gold">R$ 150</p></div>
+      <div><p class="text-[12px] text-bege/70">Casal individual</p><p class="font-serif text-xl text-gold">R$ 190</p></div>
+      <div><p class="text-[12px] text-bege/70">Casal</p><p class="font-serif text-xl text-gold">R$ 270</p></div>
+      <div><p class="text-[12px] text-bege/70">Duplo Solteiro</p><p class="font-serif text-xl text-gold">R$ 270</p></div>
+      <div><p class="text-[12px] text-bege/70">Triplo / Família</p><p class="font-serif text-xl text-gold">R$ 330</p></div>
+    </div>
+    <p class="text-[11px] text-bege/55 mt-5">Valores por diária, com café da manhã incluso. Sujeitos a alteração conforme temporada e disponibilidade.</p>
+  </div>
+</section>
+
+<!-- ============ PÁGINA 6 — REGRAS / CHECK-IN ============ -->
+<section class="page px-16 py-14 bg-cream flex flex-col">
+  <div class="text-center mb-10">
+    <p class="eyebrow text-golddk">Informações úteis</p>
+    <h2 class="font-serif text-4xl text-charcoal mt-1">Regras e Check-in</h2>
+    <div class="w-20 h-px bg-gold mx-auto mt-5"></div>
+  </div>
+
+  <div class="grid grid-cols-2 gap-6 mb-8">
+    <div class="bg-white border border-bege rounded-lg p-6">
+      <p class="font-serif text-xl text-charcoal mb-1">Check-in</p>
+      <p class="text-[13px] text-charcoal2/80">A partir das <strong>14h00</strong>. Apresentar documento de identidade com foto.</p>
+    </div>
+    <div class="bg-white border border-bege rounded-lg p-6">
+      <p class="font-serif text-xl text-charcoal mb-1">Check-out</p>
+      <p class="text-[13px] text-charcoal2/80">Até as <strong>12h00</strong>. Late check-out sujeito a disponibilidade.</p>
+    </div>
+    <div class="bg-white border border-bege rounded-lg p-6">
+      <p class="font-serif text-xl text-charcoal mb-1">Cancelamento</p>
+      <p class="text-[13px] text-charcoal2/80">Gratuito até <strong>48 horas</strong> antes da data de entrada.</p>
+    </div>
+    <div class="bg-white border border-bege rounded-lg p-6">
+      <p class="font-serif text-xl text-charcoal mb-1">Formas de pagamento</p>
+      <p class="text-[13px] text-charcoal2/80">Pix, cartão de crédito/débito ou dinheiro.</p>
+    </div>
+  </div>
+
+  <div class="bg-charcoal text-cream rounded-lg p-8">
+    <p class="eyebrow text-gold mb-4">Incluso em todas as diárias</p>
+    <div class="grid grid-cols-2 gap-x-8 gap-y-3 text-[13px]">
+      <p class="border-l-2 border-gold pl-3">Café da manhã servido todas as manhãs</p>
+      <p class="border-l-2 border-gold pl-3">Wi-Fi de alta velocidade em todo o hotel</p>
+      <p class="border-l-2 border-gold pl-3">Recepção disponível 24 horas por dia</p>
+      <p class="border-l-2 border-gold pl-3">Enxoval premium e ambiente climatizado</p>
+    </div>
+  </div>
+
+  <div class="mt-8 text-[12px] text-charcoal2/70 leading-relaxed">
+    <p class="mb-1.5"><strong>Observações:</strong> não é permitido fumar nas acomodações. Animais de estimação mediante consulta prévia à recepção. Crianças são bem-vindas — consulte condições de hospedagem para menores.</p>
+    <p>Reservas pelo WhatsApp <strong>(74) 98139-9221</strong> ou pelo site <strong>hotelbegeouro.com.br</strong>, com confirmação imediata.</p>
+  </div>
+</section>
+
+<!-- ============ PÁGINA 7 — CONTATO ============ -->
+<section class="page bg-charcoal text-cream flex flex-col items-center justify-center px-16 text-center">
+  <div class="w-20 h-20 rounded-full bg-charcoal2 border-2 border-gold flex items-center justify-center mb-8">
+    <span class="font-serif text-gold text-4xl leading-none">B</span>
+  </div>
+  <h2 class="font-serif text-5xl mb-2">Hotel Bege <span class="italic text-gold">Ouro</span></h2>
+  <p class="text-sm text-bege/70 mb-1">Reserve a sua estadia. Será um prazer receber você.</p>
+  <div class="w-20 h-px bg-gold my-9"></div>
+
+  <div class="grid grid-cols-2 gap-x-16 gap-y-7 text-left">
+    <div>
+      <p class="eyebrow text-gold mb-1">Endereço</p>
+      <p class="text-[14px] text-bege/90 leading-relaxed">Praça da Rodoviária, s/n — Centro<br>Ourolândia, Bahia · CEP 44.718-000</p>
+    </div>
+    <div>
+      <p class="eyebrow text-gold mb-1">Telefone & WhatsApp</p>
+      <p class="text-[14px] text-bege/90">(74) 98139-9221</p>
+    </div>
+    <div>
+      <p class="eyebrow text-gold mb-1">E-mail</p>
+      <p class="text-[14px] text-bege/90">begeourohotel@hotmail.com</p>
+    </div>
+    <div>
+      <p class="eyebrow text-gold mb-1">Site & Instagram</p>
+      <p class="text-[14px] text-bege/90">hotelbegeouro.com.br<br>@hotelbegeouro</p>
+    </div>
+  </div>
+
+  <div class="mt-14 pt-7 border-t border-white/10 w-full max-w-lg">
+    <p class="text-[11px] tracking-widest uppercase text-gold/80">Recepção 24 horas · Café da manhã incluso</p>
+    <p class="text-[11px] text-bege/45 mt-3">Catálogo de Acomodações 2026 — valores e condições sujeitos a alteração sem aviso prévio.</p>
+  </div>
+</section>
+
+</body>
+</html>
