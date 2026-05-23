@@ -993,11 +993,15 @@ const App = {
     const pendentes = DB.reservations().filter(r => r.valorRestante > 0 && r.statusReserva !== 'cancelada');
     const totalPendente = pendentes.reduce((s,r) => s + r.valorRestante, 0);
 
+    // Exclui pagamentos de reservas canceladas do total recebido
+    const reservasCanceladas = new Set(DB.reservations().filter(r => r.statusReserva === 'cancelada').map(r => r.id));
+    const pgsValidos = pgs.filter(p => !reservasCanceladas.has(p.reservaId));
+
     const html = `
       <div class="kpi-grid" style="grid-template-columns: repeat(3, 1fr);">
-        <div class="kpi"><div class="label">Total recebido</div><div class="value">${DB.formatBRL(pgs.reduce((s,p)=>s+p.valor,0))}</div></div>
+        <div class="kpi"><div class="label">Total recebido</div><div class="value">${DB.formatBRL(pgsValidos.reduce((s,p)=>s+p.valor,0))}</div></div>
         <div class="kpi" style="border-left-color: var(--vermelho);"><div class="label">A receber</div><div class="value">${DB.formatBRL(totalPendente)}</div><div class="delta down">${pendentes.length} reservas com saldo</div></div>
-        <div class="kpi"><div class="label">Pagamentos</div><div class="value">${pgs.length}</div><div class="delta">Lançamentos</div></div>
+        <div class="kpi"><div class="label">Pagamentos</div><div class="value">${pgsValidos.length}</div><div class="delta">Lançamentos</div></div>
       </div>
 
       <div class="card">
@@ -1106,9 +1110,13 @@ const App = {
     const rooms = DB.rooms();
     const consumos = DB.consumptions();
 
-    const fatHoje = pgs.filter(p => p.data.slice(0,10) === today).reduce((s,p)=>s+p.valor,0);
-    const fatMes = pgs.filter(p => p.data.slice(0,7) === month).reduce((s,p)=>s+p.valor,0);
-    const fatAno = pgs.filter(p => p.data.slice(0,4) === year).reduce((s,p)=>s+p.valor,0);
+    // Exclui pagamentos de reservas canceladas do faturamento
+    const reservasCanceladasIds = new Set(reservs.filter(r => r.statusReserva === 'cancelada').map(r => r.id));
+    const pgsValidos = pgs.filter(p => !reservasCanceladasIds.has(p.reservaId));
+
+    const fatHoje = pgsValidos.filter(p => p.data.slice(0,10) === today).reduce((s,p)=>s+p.valor,0);
+    const fatMes = pgsValidos.filter(p => p.data.slice(0,7) === month).reduce((s,p)=>s+p.valor,0);
+    const fatAno = pgsValidos.filter(p => p.data.slice(0,4) === year).reduce((s,p)=>s+p.valor,0);
 
     const confirmadas = reservs.filter(r => ['confirmada','em_hospedagem','finalizada'].includes(r.statusReserva)).length;
     const canceladas = reservs.filter(r => r.statusReserva === 'cancelada').length;
@@ -1123,7 +1131,7 @@ const App = {
     for (let i = 6; i >= 0; i--) {
       const d = new Date(); d.setDate(d.getDate() - i);
       const ds = d.toISOString().slice(0, 10);
-      last7.push({ data: ds, valor: pgs.filter(p => p.data.slice(0,10) === ds).reduce((s,p)=>s+p.valor,0) });
+      last7.push({ data: ds, valor: pgsValidos.filter(p => p.data.slice(0,10) === ds).reduce((s,p)=>s+p.valor,0) });
     }
     const max7 = Math.max(...last7.map(d => d.valor), 1);
 
@@ -1172,7 +1180,7 @@ const App = {
             <tbody>
               ${rooms.map(rm => {
                 const rsvDoMes = reservs.filter(r => r.quartoId === rm.id && (r.criadaEm||'').slice(0,7) === month);
-                const fat = pgs.filter(p => rsvDoMes.find(r => r.id === p.reservaId) && p.data.slice(0,7) === month).reduce((s,p)=>s+p.valor,0);
+                const fat = pgsValidos.filter(p => rsvDoMes.find(r => r.id === p.reservaId) && p.data.slice(0,7) === month).reduce((s,p)=>s+p.valor,0);
                 return `<tr>
                   <td><strong>${rm.numero}</strong></td>
                   <td>${rm.tipo}</td>
