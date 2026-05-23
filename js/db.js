@@ -436,7 +436,7 @@ const DB = {
     const payload = { reserva_id: p.reservaId, valor: p.valor, forma: p.forma, data: p.data || new Date().toISOString() };
     const { data } = await _sb.from('payments').insert(payload).select().single();
     const m = _mapPayment(data); _cache.payments.unshift(m);
-    const r = _cache.reservations.find(x => x.id === p.reservaId);
+        const r = _cache.reservations.find(x => x.id === p.reservaId);
     if (r) {
       r.valorPago = (r.valorPago || 0) + p.valor;
       r.valorRestante = Math.max(0, r.valorTotal - r.valorPago);
