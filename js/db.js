@@ -414,6 +414,11 @@ const DB = {
 
   /* ===== Pagamentos ===== */
   payments(reservaId = null) { const a = _cache.payments; return reservaId ? a.filter(p => p.reservaId === reservaId) : a; },
+  async updateReservationPaymentFields(r) {
+    try {
+      await _sb.from('reservations').update({ valor_pago: r.valorPago, valor_restante: r.valorRestante, status_pagamento: r.statusPagamento }).eq('id', r.id);
+    } catch(e) { console.warn('Erro ao corrigir valorPago:', e); }
+  },
   async addPayment(p) {
     const payload = { reserva_id: p.reservaId, valor: p.valor, forma: p.forma, data: p.data || new Date().toISOString() };
     const { data } = await _sb.from('payments').insert(payload).select().single();

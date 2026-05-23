@@ -534,6 +534,15 @@ const App = {
     const totalConsumo = consumos.reduce((s,c) => s + c.valorTotal, 0);
     const pgs = DB.payments(reservaId);
 
+    // Recalcula valorPago a partir dos pagamentos reais (corrige inconsistências no banco)
+    const valorPagoReal = pgs.reduce((s,p) => s + p.valor, 0);
+    if (Math.abs(valorPagoReal - r.valorPago) > 0.01) {
+      r.valorPago = valorPagoReal;
+      r.valorRestante = Math.max(0, r.valorTotal - valorPagoReal);
+      r.statusPagamento = valorPagoReal >= r.valorTotal ? 'pago' : valorPagoReal > 0 ? 'parcial' : 'pendente';
+      DB.updateReservationPaymentFields(r);
+    }
+
     const body = `
       <div style="margin-bottom: 14px; display: flex; gap: 10px; flex-wrap:wrap;">
         <span class="pill pill-${r.statusReserva}">${this.statusLabel(r.statusReserva)}</span>
