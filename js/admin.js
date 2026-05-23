@@ -317,16 +317,16 @@ const App = {
       const clBadge = clDone > 0 ? ' (' + clDone + '/9)' : '';
       if (ativa.statusReserva === 'em_hospedagem') {
         foot = '<button class="btn btn-outline" onclick="App.closeModal()">Fechar</button>' +
-               '<button class="btn btn-outline" onclick="App.openChecklist('' + room.id + '')">Checklist' + clBadge + '</button>' +
-               '<button class="btn btn-dark" onclick="App.openConsumoFor('' + ativa.id + '')">+ Consumo</button>' +
-               '<button class="btn btn-primary" onclick="App.doCheckOut('' + ativa.id + '')">Check-out</button>';
+               '<button class="btn btn-outline" onclick="App.openChecklist(\'' + room.id + '\')">Checklist' + clBadge + '</button>' +
+               '<button class="btn btn-dark" onclick="App.openConsumoFor(\'' + ativa.id + '\')">+ Consumo</button>' +
+               '<button class="btn btn-primary" onclick="App.doCheckOut(\'' + ativa.id + '\')">Check-out</button>';
       } else {
         foot = '<button class="btn btn-outline" onclick="App.closeModal()">Fechar</button>' +
-               '<button class="btn btn-outline" onclick="App.openChecklist('' + room.id + '')">Checklist' + clBadge + '</button>' +
-               '<button class="btn btn-primary" onclick="App.doCheckIn('' + ativa.id + '')">Check-in</button>';
+               '<button class="btn btn-outline" onclick="App.openChecklist(\'' + room.id + '\')">Checklist' + clBadge + '</button>' +
+               '<button class="btn btn-primary" onclick="App.doCheckIn(\'' + ativa.id + '\')">Check-in</button>';
       }
     } else if (!ativa) {
-      foot += '<button class="btn btn-outline" onclick="App.openChecklist('' + quartoId + '')">Checklist</button>';
+      foot += '<button class="btn btn-outline" onclick="App.openChecklist(\'' + quartoId + '\')">Checklist</button>';
     }
 
     this.openModal(`Quarto ${room.numero}`, body, foot);
