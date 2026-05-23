@@ -419,6 +419,19 @@ const DB = {
       await _sb.from('reservations').update({ valor_pago: r.valorPago, valor_restante: r.valorRestante, status_pagamento: r.statusPagamento }).eq('id', r.id);
     } catch(e) { console.warn('Erro ao corrigir valorPago:', e); }
   },
+  async deletePayment(pagamentoId, reservaId) {
+    await _sb.from('payments').delete().eq('id', pagamentoId);
+    _cache.payments = _cache.payments.filter(p => p.id !== pagamentoId);
+    const r = _cache.reservations.find(x => x.id === reservaId);
+    if (r) {
+      const totalPago = _cache.payments.filter(p => p.reservaId === reservaId).reduce((s,p) => s + p.valor, 0);
+      r.valorPago = totalPago;
+      r.valorRestante = Math.max(0, r.valorTotal - totalPago);
+      r.statusPagamento = totalPago >= r.valorTotal ? 'pago' : totalPago > 0 ? 'parcial' : 'pendente';
+      r.statusReserva = totalPago >= r.valorTotal ? 'confirmada' : 'pendente';
+      await _sb.from('reservations').update({ valor_pago: r.valorPago, valor_restante: r.valorRestante, status_pagamento: r.statusPagamento, status_reserva: r.statusReserva }).eq('id', reservaId);
+    }
+  },
   async addPayment(p) {
     const payload = { reserva_id: p.reservaId, valor: p.valor, forma: p.forma, data: p.data || new Date().toISOString() };
     const { data } = await _sb.from('payments').insert(payload).select().single();

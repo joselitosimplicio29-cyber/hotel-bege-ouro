@@ -582,7 +582,7 @@ const App = {
       ${pgs.length ? `
         <h3 style="margin: 24px 0 12px; font-size: 1rem; color: var(--dourado-escuro);">Pagamentos</h3>
         <table class="table" style="font-size:0.82rem;">
-          ${pgs.map(p => `<tr><td>${DB.formatDateTime(p.data)}</td><td>${p.forma}</td><td><strong>${DB.formatBRL(p.valor)}</strong></td></tr>`).join('')}
+          ${pgs.map(p => `<tr><td>${DB.formatDateTime(p.data)}</td><td>${p.forma}</td><td><strong>${DB.formatBRL(p.valor)}</strong></td><td><button style="background:none;border:none;color:var(--vermelho);cursor:pointer;font-size:0.8rem;" onclick="App.deletePagamento('${p.id}','${r.id}')" title="Excluir pagamento">✕</button></td></tr>`).join('')}
         </table>` : ''}
     `;
 
@@ -1098,14 +1098,29 @@ const App = {
   },
 
   async savePagamento(reservaId) {
-    const valor = parseFloat(document.getElementById('pgValor').value);
-    const forma = document.getElementById('pgForma').value;
-    if (!valor || valor <= 0) return this.toast('Valor inválido.', 'error');
-    await DB.addPayment({ reservaId, valor, forma });
-    this.toast('Pagamento lançado!');
-    this.closeModal();
-    if (this.view === 'pagamentos') this.view_pagamentos();
-    else if (this.view === 'reservas') this.view_reservas();
+    if (this._savingPagamento) return;
+    this._savingPagamento = true;
+    const btn = document.querySelector('#modalFoot .btn-primary');
+    if (btn) { btn.disabled = true; btn.textContent = 'Salvando...'; }
+    try {
+      const valor = parseFloat(document.getElementById('pgValor').value);
+      const forma = document.getElementById('pgForma').value;
+      if (!valor || valor <= 0) { this.toast('Valor inválido.', 'error'); return; }
+      await DB.addPayment({ reservaId, valor, forma });
+      this.toast('Pagamento lançado!');
+      this.closeModal();
+      if (this.view === 'pagamentos') this.view_pagamentos();
+      else if (this.view === 'reservas') this.view_reservas();
+    } finally {
+      this._savingPagamento = false;
+    }
+  },
+
+  async deletePagamento(pagamentoId, reservaId) {
+    if (!confirm('Excluir este pagamento?')) return;
+    await DB.deletePayment(pagamentoId, reservaId);
+    this.toast('Pagamento excluído.');
+    this.openReservaDetail(reservaId);
   },
 
   /* ============================================================
