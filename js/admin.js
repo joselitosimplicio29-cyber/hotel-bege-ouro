@@ -127,8 +127,10 @@ const App = {
     const taxa = rooms.length ? Math.round((ocupados / rooms.length) * 100) : 0;
 
     const monthStart = today.slice(0, 8) + '01';
-    const fatMes = DB.payments().filter(p => p.data >= monthStart).reduce((s, p) => s + p.valor, 0);
-    const fatHoje = DB.payments().filter(p => p.data.slice(0, 10) === today).reduce((s, p) => s + p.valor, 0);
+    const reservasCanceladasIds = new Set(reservs.filter(r => r.statusReserva === 'cancelada').map(r => r.id));
+    const pgsValidos = DB.payments().filter(p => !reservasCanceladasIds.has(p.reservaId));
+    const fatMes = pgsValidos.filter(p => p.data >= monthStart).reduce((s, p) => s + p.valor, 0);
+    const fatHoje = pgsValidos.filter(p => p.data.slice(0, 10) === today).reduce((s, p) => s + p.valor, 0);
 
     const checkinsHoje = reservs.filter(r => r.entrada === today && r.statusReserva !== 'cancelada');
     const checkoutsHoje = reservs.filter(r => r.saida === today && r.statusReserva !== 'cancelada');
