@@ -232,8 +232,9 @@ const App = {
                   <span class="num">${r.numero}</span>
                   <span class="tipo">${r.tipo}</span>
                   <span class="status-badge">${r.status}</span>
-                  ${reservaAtiva ? `<div style="margin-top:10px; font-size:0.78rem; color:var(--escuro-suave);">${DB.client(reservaAtiva.clienteId)?.nome.split(' ')[0]}</div>` : ''}
-                  ${reservaFutura ? `<div style="margin-top:10px; font-size:0.72rem; color:var(--cinza-texto);">Proxima reserva: ${DB.formatDate(reservaFutura.entrada)}</div>` : ''}
+                  ${reservaAtiva ? `<div style="margin-top:8px;font-size:0.78rem;color:var(--escuro-suave);">${DB.client(reservaAtiva.clienteId)?.nome.split(' ')[0]}</div>` : ''}
+                  ${reservaFutura ? `<div style="margin-top:8px;font-size:0.72rem;color:var(--cinza-texto);">Prox: ${DB.formatDate(reservaFutura.entrada)}</div>` : ''}
+                  ${(()=>{ const k='checklist_'+r.id+'_'+today; const s=JSON.parse(localStorage.getItem(k)||'{}'); const d=['limpeza','cama','toalhas','banheiro','frigobar','lixo','tv_ac','janelas','chaves'].filter(i=>s[i]).length; return d>0?'<div style="margin-top:4px;font-size:0.7rem;color:var(--verde);">'+d+'/9 itens</div>':''; })()}
                 </div>
               `;
             }).join('')}
@@ -310,11 +311,22 @@ const App = {
       <button class="btn btn-primary" onclick="App.saveRoomStatus('${quartoId}')">Salvar status</button>`;
 
     if (ativa && this.can('checkin')) {
-      foot = `<button class="btn btn-outline" onclick="App.closeModal()">Fechar</button>` +
-        (ativa.statusReserva === 'em_hospedagem'
-          ? `<button class="btn btn-dark" onclick="App.openConsumoFor('${ativa.id}')">Lançar consumo</button>
-             <button class="btn btn-primary" onclick="App.doCheckOut('${ativa.id}')">Fazer check-out</button>`
-          : `<button class="btn btn-primary" onclick="App.doCheckIn('${ativa.id}')">Fazer check-in</button>`);
+      const clKey = this._checklistKey(room.id);
+      const clSaved = JSON.parse(localStorage.getItem(clKey) || '{}');
+      const clDone = ['limpeza','cama','toalhas','banheiro','frigobar','lixo','tv_ac','janelas','chaves'].filter(i => clSaved[i]).length;
+      const clBadge = clDone > 0 ? ' (' + clDone + '/9)' : '';
+      if (ativa.statusReserva === 'em_hospedagem') {
+        foot = '<button class="btn btn-outline" onclick="App.closeModal()">Fechar</button>' +
+               '<button class="btn btn-outline" onclick="App.openChecklist('' + room.id + '')">Checklist' + clBadge + '</button>' +
+               '<button class="btn btn-dark" onclick="App.openConsumoFor('' + ativa.id + '')">+ Consumo</button>' +
+               '<button class="btn btn-primary" onclick="App.doCheckOut('' + ativa.id + '')">Check-out</button>';
+      } else {
+        foot = '<button class="btn btn-outline" onclick="App.closeModal()">Fechar</button>' +
+               '<button class="btn btn-outline" onclick="App.openChecklist('' + room.id + '')">Checklist' + clBadge + '</button>' +
+               '<button class="btn btn-primary" onclick="App.doCheckIn('' + ativa.id + '')">Check-in</button>';
+      }
+    } else if (!ativa) {
+      foot += '<button class="btn btn-outline" onclick="App.openChecklist('' + quartoId + '')">Checklist</button>';
     }
 
     this.openModal(`Quarto ${room.numero}`, body, foot);
@@ -634,22 +646,111 @@ const App = {
     }
   },
 
-  async doCheckIn(id) {
+  /* ── CHECK-IN modal ── */
+  doCheckIn(id) {
+    const r = DB.reservation(id);
+    const cli = DB.client(r.clienteId);
+    const room = DB.room(r.quartoId);
+    const horaAtual = new Date().toTimeString().slice(0,5);
+    const body = `
+      <div style="padding:14px;background:var(--cinza-fundo);margin-bottom:18px;">
+        <strong>Quarto ${room?.numero}</strong> · ${cli?.nome} · ${r.codigo}
+        <span style="margin-left:12px;" class="pill pill-confirmada">Entrada: ${DB.formatDate(r.entrada)}</span>
+      </div>
+      <div class="form-grid">
+        <div class="form-row">
+          <label class="field">Horário de entrada</label>
+          <input type="time" id="ciHora" value="${horaAtual}">
+        </div>
+        <div class="form-row">
+          <label class="field">Nº de hóspedes</label>
+          <input type="number" id="ciHospedes" min="1" max="10" value="${r.hospedes || 1}">
+        </div>
+        <div class="form-row full">
+          <label class="field">Observações</label>
+          <input type="text" id="ciObs" placeholder="Ex: hóspede com pet, quarto preferido, alergias...">
+        </div>
+      </div>`;
+    const foot = `
+      <button class="btn btn-outline" onclick="App.closeModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="App.confirmCheckIn('${id}')">Confirmar check-in</button>`;
+    this.openModal('Check-in — Quarto ' + (room?.numero || ''), body, foot);
+  },
+
+  async confirmCheckIn(id) {
+    const hora = document.getElementById('ciHora')?.value || '';
+    const hospedes = parseInt(document.getElementById('ciHospedes')?.value) || 1;
+    const obs = document.getElementById('ciObs')?.value?.trim() || '';
+    const r = DB.reservation(id);
+    const obsAtual = r.observacoes || '';
+    const novaObs = [obsAtual, obs ? 'Check-in ' + hora + ': ' + obs : 'Check-in: ' + hora].filter(Boolean).join(' | ');
+    await DB.saveReservation({ ...r, hospedes, observacoes: novaObs });
     await DB.checkIn(id);
     this.toast('Check-in realizado!');
     this.closeModal();
-    if (this.view === 'reservas') this.view_reservas();
-    else if (this.view === 'mapa') this.view_mapa();
-    else if (this.view === 'checkin') this.view_checkin();
-    else this.view_inicio();
+    this._refreshView();
   },
 
-  async doCheckOut(id) {
-    if (!confirm('Confirmar check-out? Será gerado o comprovante final.')) return;
+  /* ── CHECK-OUT modal ── */
+  doCheckOut(id) {
+    const r = DB.reservation(id);
+    const cli = DB.client(r.clienteId);
+    const room = DB.room(r.quartoId);
+    const consumos = DB.consumptions(id);
+    const totalConsumo = consumos.reduce((s,c) => s + c.valorTotal, 0);
+    const totalFinal = r.valorTotal + totalConsumo;
+    const horaAtual = new Date().toTimeString().slice(0,5);
+    const body = `
+      <div style="padding:14px;background:var(--cinza-fundo);margin-bottom:18px;">
+        <strong>Quarto ${room?.numero}</strong> · ${cli?.nome} · ${r.codigo}
+      </div>
+      <div class="form-grid">
+        <div class="form-row">
+          <label class="field">Horário de saída</label>
+          <input type="time" id="coHora" value="${horaAtual}">
+        </div>
+        <div class="form-row">
+          <label class="field">Status do quarto</label>
+          <select id="coStatus">
+            <option value="limpeza">Precisa limpeza</option>
+            <option value="disponivel">OK — disponível</option>
+            <option value="manutencao">Pendência / manutenção</option>
+          </select>
+        </div>
+        <div class="form-row full">
+          <label class="field">Observações da saída</label>
+          <input type="text" id="coObs" placeholder="Ex: deixou pertence, dano no quarto...">
+        </div>
+      </div>
+      <div style="padding:14px;background:var(--cinza-fundo);margin-top:8px;border-radius:8px;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span>Hospedagem</span><strong>${DB.formatBRL(r.valorTotal)}</strong></div>
+        ${totalConsumo > 0 ? '<div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span>Consumo</span><strong>' + DB.formatBRL(totalConsumo) + '</strong></div>' : ''}
+        <div style="display:flex;justify-content:space-between;border-top:1px solid var(--cinza-borda);padding-top:8px;"><span><strong>Total final</strong></span><strong style="color:var(--dourado-escuro);">${DB.formatBRL(totalFinal)}</strong></div>
+        <div style="display:flex;justify-content:space-between;margin-top:4px;"><span>Pago</span><span style="color:${r.valorPago >= totalFinal ? 'var(--verde)' : 'var(--vermelho)'};">${DB.formatBRL(r.valorPago)}</span></div>
+      </div>`;
+    const foot = `
+      <button class="btn btn-outline" onclick="App.closeModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="App.confirmCheckOut('${id}')">Confirmar check-out</button>`;
+    this.openModal('Check-out — Quarto ' + (room?.numero || ''), body, foot);
+  },
+
+  async confirmCheckOut(id) {
+    const hora = document.getElementById('coHora')?.value || '';
+    const statusQuarto = document.getElementById('coStatus')?.value || 'limpeza';
+    const obs = document.getElementById('coObs')?.value?.trim() || '';
+    const r = DB.reservation(id);
+    const obsAtual = r.observacoes || '';
+    const novaObs = [obsAtual, obs ? 'Check-out ' + hora + ': ' + obs : 'Check-out: ' + hora].filter(Boolean).join(' | ');
+    await DB.saveReservation({ ...r, observacoes: novaObs });
     await DB.checkOut(id);
+    await DB.setRoomStatus(r.quartoId, statusQuarto);
     this.toast('Check-out realizado!');
     this.closeModal();
     setTimeout(() => PDF.comprovante(id), 200);
+    this._refreshView();
+  },
+
+  _refreshView() {
     if (this.view === 'reservas') this.view_reservas();
     else if (this.view === 'mapa') this.view_mapa();
     else if (this.view === 'checkin') this.view_checkin();
@@ -662,6 +763,72 @@ const App = {
     this.toast('Reserva cancelada.');
     this.closeModal();
     this.view_reservas();
+  },
+
+  /* ============================================================
+     CHECKLIST DA CAMAREIRA
+     ============================================================ */
+  _checklistKey(quartoId) {
+    return 'checklist_' + quartoId + '_' + new Date().toISOString().slice(0,10);
+  },
+
+  openChecklist(quartoId) {
+    const room = DB.room(quartoId);
+    const key = this._checklistKey(quartoId);
+    const saved = JSON.parse(localStorage.getItem(key) || '{}');
+    const items = [
+      { id:'limpeza',  label:'Limpeza geral do quarto' },
+      { id:'cama',     label:'Troca de roupa de cama' },
+      { id:'toalhas',  label:'Troca de toalhas' },
+      { id:'banheiro', label:'Banheiro limpo e abastecido' },
+      { id:'frigobar', label:'Frigobar conferido / abastecido' },
+      { id:'lixo',     label:'Lixo retirado' },
+      { id:'tv_ac',    label:'TV, AC e controles ok' },
+      { id:'janelas',  label:'Janelas e cortinas ok' },
+      { id:'chaves',   label:'Chaves / cartão devolvido' },
+    ];
+    const done = items.filter(i => saved[i.id]).length;
+    const body = `
+      <div style="margin-bottom:16px;display:flex;align-items:center;gap:12px;">
+        <span style="font-size:1.8rem;font-weight:500;color:var(--dourado-escuro);">${done}/${items.length}</span>
+        <div style="flex:1;height:8px;background:var(--cinza-borda);border-radius:4px;overflow:hidden;">
+          <div style="height:100%;width:${Math.round(done/items.length*100)}%;background:var(--dourado-escuro);border-radius:4px;"></div>
+        </div>
+        ${saved._savedAt ? '<span style="font-size:0.75rem;color:var(--cinza-texto);">Salvo ' + saved._savedAt + '</span>' : ''}
+      </div>
+      ${items.map(i => `
+        <label style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--cinza-borda);cursor:pointer;">
+          <input type="checkbox" id="cl_${i.id}" ${saved[i.id] ? 'checked' : ''} style="width:18px;height:18px;accent-color:var(--dourado-escuro);">
+          <span style="${saved[i.id] ? 'text-decoration:line-through;color:var(--cinza-texto);' : ''}">${i.label}</span>
+        </label>`).join('')}
+      <div style="margin-top:16px;">
+        <label class="field">Observações</label>
+        <input type="text" id="clObs" value="${saved._obs || ''}" placeholder="Ex: banheiro com mancha, AC com defeito...">
+      </div>`;
+    const foot = `
+      <button class="btn btn-outline" onclick="App.closeModal()">Fechar</button>
+      <button class="btn btn-primary" onclick="App.saveChecklist('${quartoId}')">Salvar checklist</button>`;
+    this.openModal('Checklist — Quarto ' + (room?.numero || ''), body, foot);
+  },
+
+  saveChecklist(quartoId) {
+    const key = this._checklistKey(quartoId);
+    const ids = ['limpeza','cama','toalhas','banheiro','frigobar','lixo','tv_ac','janelas','chaves'];
+    const state = {};
+    ids.forEach(i => { state[i] = document.getElementById('cl_' + i)?.checked || false; });
+    state._obs = document.getElementById('clObs')?.value?.trim() || '';
+    state._savedAt = new Date().toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'});
+    localStorage.setItem(key, JSON.stringify(state));
+    const done = ids.filter(i => state[i]).length;
+    if (done === ids.length) {
+      DB.setRoomStatus(quartoId, 'disponivel').then(() => { if (this.view === 'mapa') this.view_mapa(); });
+      this.toast('Checklist completo! Quarto marcado como disponivel.');
+    } else {
+      DB.setRoomStatus(quartoId, 'limpeza').then(() => { if (this.view === 'mapa') this.view_mapa(); });
+      this.toast('Checklist salvo (' + done + '/' + ids.length + ').');
+    }
+    this.closeModal();
+    if (this.view === 'mapa') this.view_mapa();
   },
 
   /* ============================================================
@@ -790,9 +957,20 @@ const App = {
     const r = DB.reservation(reservaId);
     const cli = DB.client(r.clienteId);
     const room = DB.room(r.quartoId);
+    const consumosAtuais = DB.consumptions(reservaId);
+    const totalAtual = consumosAtuais.reduce((s,c) => s + c.valorTotal, 0);
+    const atalhos = [
+      {n:'Agua mineral',v:5},{n:'Refrigerante',v:8},{n:'Cerveja',v:10},
+      {n:'Suco',v:8},{n:'Snack',v:6},{n:'Cafe',v:5},{n:'Agua quente',v:4},
+    ];
     const body = `
-      <div style="margin-bottom: 18px; padding: 14px; background: var(--cinza-fundo);">
-        <strong>Quarto ${room.numero}</strong> · ${cli.nome} · ${r.codigo}
+      <div style="padding:12px 14px;background:var(--cinza-fundo);margin-bottom:18px;display:flex;justify-content:space-between;align-items:center;">
+        <span><strong>Quarto ${room.numero}</strong> · ${cli.nome}</span>
+        <span style="color:var(--cinza-texto);font-size:0.85rem;">Atual: <strong>${DB.formatBRL(totalAtual)}</strong> (${consumosAtuais.length} itens)</span>
+      </div>
+      <p style="font-size:0.8rem;color:var(--cinza-texto);margin-bottom:8px;font-weight:500;">Atalhos rápidos:</p>
+      <div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:18px;">
+        ${atalhos.map(a => `<button onclick="document.getElementById('csProduto').value='${a.n}';document.getElementById('csVu').value='${a.v}';" style="padding:5px 12px;border:1px solid var(--cinza-borda);border-radius:20px;background:var(--cinza-fundo);cursor:pointer;font-size:0.8rem;">${a.n} · R$${a.v}</button>`).join('')}
       </div>
       <div class="form-grid">
         <div class="form-row full">
@@ -804,14 +982,15 @@ const App = {
           <input type="number" id="csQtd" min="1" value="1">
         </div>
         <div class="form-row">
-          <label class="field">Valor unitário</label>
+          <label class="field">Valor unitário (R$)</label>
           <input type="number" id="csVu" min="0" step="0.01" value="0">
         </div>
-      </div>`;
+      </div>
+      ${consumosAtuais.length ? '<details style="margin-top:14px;"><summary style="cursor:pointer;font-size:0.82rem;color:var(--cinza-texto);">Ver itens já lançados (' + consumosAtuais.length + ')</summary><table class="table" style="margin-top:8px;font-size:0.8rem;">' + consumosAtuais.map(c => '<tr><td>' + c.produto + '</td><td>' + c.qtd + 'x</td><td>' + DB.formatBRL(c.valorUnit) + '</td><td><strong>' + DB.formatBRL(c.valorTotal) + '</strong></td></tr>').join('') + '</table></details>' : ''}`;
     const foot = `
       <button class="btn btn-outline" onclick="App.closeModal()">Cancelar</button>
       <button class="btn btn-primary" onclick="App.saveConsumo('${reservaId}')">Lançar consumo</button>`;
-    this.openModal('Lançar consumo', body, foot);
+    this.openModal('Consumo — Quarto ' + room.numero, body, foot);
   },
 
   async saveConsumo(reservaId) {
