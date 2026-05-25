@@ -378,6 +378,32 @@ const DB = {
     const r = _cache.reservations.find(x => x.id === id); if (r) r.statusReserva = 'cancelada';
     await this.refreshRoomStatuses();
   },
+  async deleteReservation(id) {
+    if (_sb) {
+      // Apaga pagamentos vinculados primeiro
+      await _sb.from('payments').delete().eq('reserva_id', id);
+      // Apaga consumos vinculados
+      await _sb.from('consumptions').delete().eq('reserva_id', id);
+      // Apaga a reserva
+      await _sb.from('reservations').delete().eq('id', id);
+    }
+    _cache.reservations = _cache.reservations.filter(r => r.id !== id);
+    _cache.payments = _cache.payments.filter(p => p.reservaId !== id);
+    _cache.consumptions = _cache.consumptions.filter(c => c.reservaId !== id);
+    await this.refreshRoomStatuses();
+  },
+  async deleteCancelledTestReservations() {
+    // Apaga TODAS as reservas canceladas cujo cliente tem nome "cancelado" (case-insensitive)
+    const testIds = _cache.reservations
+      .filter(r => {
+        if (r.statusReserva !== 'cancelada') return false;
+        const cli = _cache.clients.find(c => c.id === r.clienteId);
+        return !cli || /^cancelad/i.test(cli.nome?.trim());
+      })
+      .map(r => r.id);
+    for (const id of testIds) await this.deleteReservation(id);
+    return testIds.length;
+  },
   async checkIn(id) {
     const r = _cache.reservations.find(x => x.id === id); if (!r) return;
     await _sb.from('reservations').update({ status_reserva: 'em_hospedagem', check_in_at: new Date().toISOString() }).eq('id', id);

@@ -360,6 +360,7 @@ const App = {
               <option value="cancelada">Cancelada</option>
             </select>
             ${this.can('checkin') ? '<button class="btn btn-primary" onclick="App.openNewReserva()">+ Nova reserva</button>' : ''}
+            ${this.user?.perfil === 'admin' ? '<button class="btn btn-outline" style="border-color:var(--vermelho); color:var(--vermelho); font-size:0.78rem;" onclick="App.limparReservasTeste()" title="Apaga todas as reservas canceladas com nome \'cancelado\'">🗑 Limpar testes</button>' : ''}
           </div>
         </div>
         <div class="card-body tight" id="reservasTable">
@@ -619,6 +620,9 @@ const App = {
       if (!['finalizada','cancelada'].includes(r.statusReserva)) {
         foot += `<button class="btn btn-danger" onclick="App.cancelReserva('${r.id}')">Cancelar</button>`;
       }
+      if (r.statusReserva === 'cancelada' && this.user?.perfil === 'admin') {
+        foot += `<button class="btn btn-danger" style="background:#7f1d1d; border-color:#7f1d1d;" onclick="App.deleteReserva('${r.id}')">🗑 Excluir permanentemente</button>`;
+      }
     }
     this.openModal(`Reserva ${r.codigo}`, body, foot);
   },
@@ -763,6 +767,47 @@ const App = {
     this.toast('Reserva cancelada.');
     this.closeModal();
     this.view_reservas();
+  },
+
+  async deleteReserva(id) {
+    const r = DB.reservation(id);
+    if (!r) return;
+    const cli = DB.client(r.clienteId);
+    if (!confirm(`⚠️ Atenção: isso vai APAGAR definitivamente a reserva ${r.codigo} (${cli?.nome || '—'}) do banco de dados.\n\nEssa ação não pode ser desfeita. Confirmar?`)) return;
+    try {
+      await DB.deleteReservation(id);
+      this.toast('Reserva excluída permanentemente.');
+      this.closeModal();
+      this._refreshView();
+    } catch(err) {
+      console.error(err);
+      this.toast('Erro ao excluir reserva.', 'error');
+    }
+  },
+
+  async limparReservasTeste() {
+    const canceladas = DB.reservations().filter(r => r.statusReserva === 'cancelada');
+    if (!canceladas.length) {
+      this.toast('Nenhuma reserva cancelada encontrada.', 'error');
+      return;
+    }
+    const lista = canceladas.map(r => {
+      const cli = DB.client(r.clienteId);
+      return `• ${r.codigo} — ${cli?.nome || '(sem nome)'}`;
+    }).join('\n');
+    if (!confirm(`Vai apagar PERMANENTEMENTE ${canceladas.length} reserva(s) cancelada(s):\n\n${lista}\n\nEssa ação não pode ser desfeita. Confirmar?`)) return;
+    try {
+      let total = 0;
+      for (const r of canceladas) {
+        await DB.deleteReservation(r.id);
+        total++;
+      }
+      this.toast(`${total} reserva(s) cancelada(s) excluída(s) com sucesso!`);
+      this._refreshView();
+    } catch(err) {
+      console.error(err);
+      this.toast('Erro ao limpar reservas canceladas.', 'error');
+    }
   },
 
   /* ============================================================

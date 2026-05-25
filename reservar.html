@@ -201,7 +201,7 @@
 
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 <script src="js/supabase-config.js"></script>
-<script src="js/db.js?v=4"></script>
+<script src="js/db.js?v=5"></script>
 <script src="js/site.js?v=18"></script>
 <script>
 (async function() {
@@ -483,37 +483,78 @@ async function confirmar(){
     setTimeout(() => { window.open(waLink, '_blank'); }, 600);
   }
 
+  // Salva dados no localStorage ANTES de tentar o banco
+  // Assim se o servidor falhar, o admin pode recuperar pelo painel
+  const backupPayload = {
+    nome:        state.cliente.nome,
+    cpf:         state.cliente.cpf,
+    telefone:    state.cliente.telefone,
+    email:       state.cliente.email,
+    quartoId:    room.id,
+    quartoNum:   room.numero,
+    quartoTipo:  room.tipo,
+    entrada:     state.entrada,
+    saida:       state.saida,
+    diarias:     state.diarias,
+    hospedes:    state.hospedes,
+    valorDiaria: precoPorHospedes(room, state.hospedes),
+    valorTotal:  state.totalFinal,
+    observacoes: state.cliente.obs || null,
+    tentadoEm:   new Date().toISOString(),
+    salvoNoBanco: false,
+  };
+  try {
+    const backups = JSON.parse(localStorage.getItem('hbo_pending_reservations') || '[]');
+    backups.push(backupPayload);
+    localStorage.setItem('hbo_pending_reservations', JSON.stringify(backups));
+  } catch(_) {}
+
   try {
     // Chama RPC segura — toda a lógica (find/create cliente + insert reserva)
     // roda dentro do banco com SECURITY DEFINER. Anon não toca em PII de terceiros.
     const created = await DB.createReservationOnline({
-      nome:        state.cliente.nome,
-      cpf:         state.cliente.cpf,
-      telefone:    state.cliente.telefone,
-      email:       state.cliente.email,
-      quartoId:    room.id,
-      entrada:     state.entrada,
-      saida:       state.saida,
-      diarias:     state.diarias,
-      hospedes:    state.hospedes,
-      valorDiaria: precoPorHospedes(room, state.hospedes),
-      valorTotal:  state.totalFinal,
-      observacoes: state.cliente.obs || null,
+      nome:        backupPayload.nome,
+      cpf:         backupPayload.cpf,
+      telefone:    backupPayload.telefone,
+      email:       backupPayload.email,
+      quartoId:    backupPayload.quartoId,
+      entrada:     backupPayload.entrada,
+      saida:       backupPayload.saida,
+      diarias:     backupPayload.diarias,
+      hospedes:    backupPayload.hospedes,
+      valorDiaria: backupPayload.valorDiaria,
+      valorTotal:  backupPayload.valorTotal,
+      observacoes: backupPayload.observacoes,
     });
+    // Marca o backup como salvo no banco (para o admin saber que foi)
+    try {
+      const backups = JSON.parse(localStorage.getItem('hbo_pending_reservations') || '[]');
+      const last = backups[backups.length - 1];
+      if (last) { last.salvoNoBanco = true; last.codigo = created.codigo; }
+      localStorage.setItem('hbo_pending_reservations', JSON.stringify(backups));
+    } catch(_) {}
     irParaWhatsApp(created.codigo);
 
   } catch(err) {
     console.error('Erro ao salvar reserva no banco:', err);
-    // FALLBACK: mesmo com erro, o cliente vai para o WhatsApp com todos os dados
+    // FALLBACK: mesmo com erro, o cliente vai para o WhatsApp com todos os dados.
+    // O backup já está no localStorage para o admin recuperar.
     irParaWhatsApp('(sem código — confirmar pelo WhatsApp)');
   }
 }
+
+let _submitting = false;
 
 document.getElementById('btnNext').addEventListener('click', async () => {
   if (state.step === 1) { if (step1Valid()) { renderRooms(); show(2); } }
   else if (state.step === 2) { if (step2Valid()) show(3); }
   else if (state.step === 3) { if (step3Valid()) { updateSummary(); state.totalFinal = state.totalFinal || (precoPorHospedes(DB.room(state.quartoId), state.hospedes) * state.diarias); preencheStep4(); show(4); } }
-  else if (state.step === 4) { if (step4Valid()) await confirmar(); }
+  else if (state.step === 4) {
+    if (_submitting) return; // evita duplo envio
+    _submitting = true;
+    if (step4Valid()) await confirmar();
+    // _submitting não reseta — uma vez enviado, não envia de novo nesta sessão
+  }
 });
 document.getElementById('btnBack').addEventListener('click', () => {
   if (state.step > 1) show(state.step - 1);
