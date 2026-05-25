@@ -601,7 +601,7 @@ const App = {
 
     let foot = `<button class="btn btn-outline" onclick="App.closeModal()">Fechar</button>`;
     if (r.statusReserva === 'em_hospedagem' || r.statusReserva === 'finalizada') {
-      foot += `<button class="btn btn-outline" onclick="PDF.comprovante('${r.id}')">&#128196; Comprovante PDF</button>`;
+      foot += `<button class="btn btn-outline" onclick="App.openComprovante('${r.id}')">&#128196; Comprovante PDF</button>`;
     }
     // Botão de confirmar pagamento — aparece para qualquer reserva pendente
     if (r.statusReserva === 'pendente') {
@@ -628,6 +628,46 @@ const App = {
       }
     }
     this.openModal(`Reserva ${r.codigo}`, body, foot);
+  },
+
+  /* ===== Comprovante PDF com opção de mudar forma de pagamento ===== */
+  openComprovante(reservaId) {
+    const r = DB.reservation(reservaId);
+    if (!r) return;
+    const formas = ['pix', 'cartao_credito', 'cartao_debito', 'dinheiro', 'transferencia', 'outro'];
+    const labels = { pix: 'Pix', cartao_credito: 'Cartão de crédito', cartao_debito: 'Cartão de débito', dinheiro: 'Dinheiro', transferencia: 'Transferência', outro: 'Outro' };
+    const body = `
+      <p style="color:var(--cinza-texto); margin-bottom:20px;">Confira a forma de pagamento antes de gerar o comprovante. Você pode alterar se necessário.</p>
+      <div class="form-row">
+        <label class="field">Forma de pagamento na nota</label>
+        <select id="pdfForma">
+          ${formas.map(f => `<option value="${f}" ${r.formaPagamento === f ? 'selected' : ''}>${labels[f]}</option>`).join('')}
+        </select>
+      </div>`;
+    const foot = `
+      <button class="btn btn-outline" onclick="App.closeModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="App.gerarComprovante('${reservaId}')">&#128196; Gerar PDF</button>`;
+    this.openModal('Comprovante PDF', body, foot);
+  },
+
+  async gerarComprovante(reservaId) {
+    const r = DB.reservation(reservaId);
+    if (!r) return;
+    const novaForma = document.getElementById('pdfForma')?.value;
+    // Se mudou a forma, salva no banco antes de gerar o PDF
+    if (novaForma && novaForma !== r.formaPagamento) {
+      await DB.saveReservation({ ...r, formaPagamento: novaForma });
+      // Atualiza também os pagamentos registrados para refletir na nota
+      const pgs = DB.payments(reservaId);
+      for (const p of pgs) {
+        if (p.forma !== novaForma) {
+          await _sb.from('payments').update({ forma: novaForma }).eq('id', p.id);
+          p.forma = novaForma;
+        }
+      }
+    }
+    this.closeModal();
+    PDF.comprovante(reservaId);
   },
 
   /* ===== Confirmar Pagamento (reserva online via WhatsApp) ===== */
