@@ -617,6 +617,9 @@ const App = {
         foot += `<button class="btn btn-dark" onclick="App.openConsumoFor('${r.id}')">+ Consumo</button>`;
         foot += `<button class="btn btn-primary" onclick="App.doCheckOut('${r.id}')">Check-out</button>`;
       }
+      if (['confirmada','em_hospedagem','finalizada'].includes(r.statusReserva)) {
+        foot += `<button class="btn btn-outline" style="border-color:#7c3aed; color:#7c3aed;" onclick="App.prorrogarReserva('${r.id}')">&#128197; Prorrogar</button>`;
+      }
       if (!['finalizada','cancelada'].includes(r.statusReserva)) {
         foot += `<button class="btn btn-danger" onclick="App.cancelReserva('${r.id}')">Cancelar</button>`;
       }
@@ -767,6 +770,102 @@ const App = {
     this.toast('Reserva cancelada.');
     this.closeModal();
     this.view_reservas();
+  },
+
+  prorrogarReserva(id) {
+    const r = DB.reservation(id);
+    if (!r) return;
+    const cli = DB.client(r.clienteId);
+    const room = DB.room(r.quartoId);
+    const body = `
+      <div style="background:var(--creme); padding:16px; border-radius:8px; margin-bottom:20px; font-size:0.9rem;">
+        <strong>${cli?.nome || '—'}</strong> · Quarto ${room?.numero} · ${DB.formatDate(r.entrada)} → <strong>${DB.formatDate(r.saida)}</strong><br>
+        <span style="color:var(--cinza-texto);">Diária atual: ${DB.formatBRL(r.valorDiaria)} · Total atual: ${DB.formatBRL(r.valorTotal)}</span>
+      </div>
+      <div class="form-grid">
+        <div class="form-row full">
+          <label class="field">Nova data de saída</label>
+          <input type="date" id="prorSaida" value="${r.saida}" min="${r.saida}">
+          <div class="field-error" id="errProrSaida">Escolha uma data posterior à saída atual.</div>
+        </div>
+        <div class="form-row full" id="prorPreview" style="display:none; background:var(--creme); padding:14px; border-radius:8px; font-size:0.88rem; color:var(--escuro);">
+        </div>
+      </div>`;
+    const foot = `
+      <button class="btn btn-outline" onclick="App.closeModal()">Cancelar</button>
+      <button class="btn btn-primary" style="background:#7c3aed; border-color:#7c3aed;" onclick="App.confirmarProrrogacao('${id}')">&#10003; Confirmar prorrogação</button>`;
+    this.openModal(`Prorrogar reserva ${r.codigo}`, body, foot);
+
+    // Preview ao mudar a data
+    setTimeout(() => {
+      const inp = document.getElementById('prorSaida');
+      if (!inp) return;
+      const atualiza = () => {
+        const novaSaida = inp.value;
+        const preview = document.getElementById('prorPreview');
+        const err = document.getElementById('errProrSaida');
+        if (!novaSaida || novaSaida <= r.saida) {
+          if (preview) preview.style.display = 'none';
+          if (err) err.classList.add('show');
+          return;
+        }
+        if (err) err.classList.remove('show');
+        const diasExtras = DB.diffDays(r.saida, novaSaida);
+        const novasDiarias = DB.diffDays(r.entrada, novaSaida);
+        const valorExtra = diasExtras * r.valorDiaria;
+        const novoTotal = novasDiarias * r.valorDiaria;
+        if (preview) {
+          preview.style.display = '';
+          preview.innerHTML = `
+            <div style="display:flex; justify-content:space-between; margin-bottom:6px;"><span>Dias extras</span><strong>+${diasExtras} ${diasExtras===1?'diária':'diárias'}</strong></div>
+            <div style="display:flex; justify-content:space-between; margin-bottom:6px;"><span>Valor extra</span><strong style="color:#7c3aed;">+ ${DB.formatBRL(valorExtra)}</strong></div>
+            <div style="display:flex; justify-content:space-between; border-top:1px solid var(--cinza-borda); padding-top:8px; margin-top:4px;"><span>Novo total da reserva</span><strong>${DB.formatBRL(novoTotal)}</strong></div>
+          `;
+        }
+      };
+      inp.addEventListener('change', atualiza);
+      inp.addEventListener('input', atualiza);
+    }, 100);
+  },
+
+  async confirmarProrrogacao(id) {
+    const r = DB.reservation(id);
+    if (!r) return;
+    const novaSaida = document.getElementById('prorSaida')?.value;
+    const err = document.getElementById('errProrSaida');
+    if (!novaSaida || novaSaida <= r.saida) {
+      if (err) err.classList.add('show');
+      return;
+    }
+    const diasExtras = DB.diffDays(r.saida, novaSaida);
+    const novasDiarias = DB.diffDays(r.entrada, novaSaida);
+    const valorExtra = diasExtras * r.valorDiaria;
+    const novoTotal = novasDiarias * r.valorDiaria;
+    const novoRestante = Math.max(0, novoTotal - r.valorPago);
+    const novoStatus = novoRestante === 0 ? 'pago' : r.valorPago > 0 ? 'parcial' : 'pendente';
+    // Verifica disponibilidade (ignora a própria reserva)
+    if (!DB.isRoomAvailable(r.quartoId, r.saida, novaSaida, id)) {
+      this.toast('Quarto ocupado nesse período. Verifique outras reservas.', 'error');
+      return;
+    }
+    try {
+      await DB.saveReservation({
+        ...r,
+        saida: novaSaida,
+        diarias: novasDiarias,
+        valorTotal: novoTotal,
+        valorRestante: novoRestante,
+        statusPagamento: novoStatus,
+        statusReserva: r.statusReserva === 'finalizada' ? 'em_hospedagem' : r.statusReserva,
+        observacoes: (r.observacoes ? r.observacoes + ' | ' : '') + `Prorrogada +${diasExtras}d em ${new Date().toLocaleDateString('pt-BR')}`,
+      });
+      this.toast(`Reserva prorrogada por +${diasExtras} dia(s)! Extra: ${DB.formatBRL(valorExtra)}`);
+      this.closeModal();
+      this._refreshView();
+    } catch(err) {
+      console.error(err);
+      this.toast('Erro ao prorrogar reserva.', 'error');
+    }
   },
 
   async deleteReserva(id) {
