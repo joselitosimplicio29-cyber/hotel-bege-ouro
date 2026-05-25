@@ -603,8 +603,8 @@ const App = {
     if (r.statusReserva === 'em_hospedagem' || r.statusReserva === 'finalizada') {
       foot += `<button class="btn btn-outline" onclick="PDF.comprovante('${r.id}')">&#128196; Comprovante PDF</button>`;
     }
-    // Botão de confirmar pagamento para reservas online pendentes
-    if (r.statusReserva === 'pendente' && r.origem === 'online') {
+    // Botão de confirmar pagamento — aparece para qualquer reserva pendente
+    if (r.statusReserva === 'pendente') {
       foot += `<button class="btn btn-primary" style="background:#16a34a; border-color:#16a34a;" onclick="App.confirmPayment('${r.id}')">&#10003; Confirmar Pagamento</button>`;
     }
     if (this.can('pagamentos') && r.valorRestante > 0 && r.statusReserva !== 'cancelada' && r.statusReserva !== 'pendente') {
