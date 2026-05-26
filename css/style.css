@@ -224,8 +224,9 @@ img:hover { filter: sepia(0) contrast(1) saturate(1); }
 }
 .hero h1 {
   color: var(--creme);
-  font-weight: 400;
-  margin-bottom: 28px;
+  font-weight: 500;
+  font-size: clamp(1.6rem, 3.5vw, 2.6rem);
+  margin-bottom: 10px;
   opacity: 0;
   transform: translateY(30px);
   animation: heroFadeIn 1s cubic-bezier(0.2, 0, 0.2, 1) forwards 0.3s;
@@ -234,6 +235,19 @@ img:hover { filter: sepia(0) contrast(1) saturate(1); }
   font-style: italic;
   color: var(--dourado-claro);
   display: block;
+}
+.hero-tagline {
+  font-family: 'Playfair Display', serif;
+  font-size: 2rem;
+  font-style: italic;
+  color: var(--dourado-claro);
+  margin-bottom: 16px !important;
+  opacity: 0;
+  transform: translateY(20px);
+  animation: heroFadeIn 1s cubic-bezier(0.2, 0, 0.2, 1) forwards 0.45s;
+}
+.hero-tagline em {
+  color: var(--dourado-claro);
 }
 .hero p {
   font-size: 1.2rem;

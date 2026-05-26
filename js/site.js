@@ -4,11 +4,11 @@
 
 /* === Banco central de imagens === */
 const IMG = {
-  hero:        'img/lobby-real.jpg?v=15',
-  fachada:     'img/lobby-real.jpg?v=15',
-  lobby:       'img/foto-capa.jpg?v=15',
-  recepcao:    'img/foto-capa.jpg?v=15',
-  cafe:        'img/galeria_frutas.png?v=15',
+  hero:        'img/fachada-hotel-bege-ouro-ourolandia.jpg?v=16',
+  fachada:     'img/fachada-hotel-bege-ouro-ourolandia.jpg?v=16',
+  lobby:       'img/lobby-recepcao-hotel-bege-ouro.jpg?v=16',
+  recepcao:    'img/lobby-recepcao-hotel-bege-ouro.jpg?v=16',
+  cafe:        'img/cafe-da-manha-hotel-ourolandia-bahia.png?v=16',
   restaurante: 'img/galeria_doces.png?v=15',
   areaEstar:   'img/galeria_poltronas.png?v=15',
   decoracao:   'img/galeria_iluminacao.png?v=15',
@@ -19,12 +19,12 @@ const IMG = {
 
   /* Quartos por tipo — FOTOS REAIS DO HOTEL */
   // Solteiro
-  quartoSolteiro:       'img/quarto-solteiro.jpg?v=13',
+  quartoSolteiro:       'img/quarto-solteiro-hotel-bege-ouro.jpg?v=16',
   quartoSolteiroBanho:  'img/banheiro-solteiro.jpg?v=13',
   quartoSolteiroPia:    'img/pia-solteiro.jpg?v=13',
 
   // Casal
-  quartoCasal:          'img/quarto-casal.jpg?v=13',
+  quartoCasal:          'img/quarto-casal-hotel-ourolandia-ba.jpg?v=16',
   quartoCasal2:         'img/quarto-casal-2.jpg?v=13',
   quartoCasal3:         'img/quarto-casal-3.jpg?v=13',
   quartoCasalBanho:     'img/banheiro-casal.jpg?v=13',
@@ -35,7 +35,7 @@ const IMG = {
   quartoDuploBanho:     'img/banheiro-geral.jpg?v=13',
 
   // Triplo
-  quartoTriploReal:     'img/quarto-triplo.jpg?v=13',
+  quartoTriploReal:     'img/quarto-triplo-familia-hotel-ourolandia.jpg?v=16',
   quartoTriploBanho:    'img/banheiro-triplo.jpg?v=13',
 
   // Genéricos (usados em galerias quando faltar foto específica)
@@ -45,22 +45,22 @@ const IMG = {
   tvArCondicionado:     'img/tv-ar-condicionado.jpg?v=13',
 
   // Aliases (compatibilidade com código existente)
-  quartoIndividual:        'img/quarto-solteiro.jpg?v=13',
-  quartoIndividual2:       'img/quarto-solteiro.jpg?v=13',
+  quartoIndividual:        'img/quarto-solteiro-hotel-bege-ouro.jpg?v=16',
+  quartoIndividual2:       'img/quarto-solteiro-hotel-bege-ouro.jpg?v=16',
   quartoIndividualTV:      'img/frigobar.jpg?v=13',
   quartoIndividualBanheiro:'img/banheiro-solteiro.jpg?v=13',
-  quartoCasalDuplo:        'img/quarto-casal.jpg?v=13',
-  quartoTriplo:            'img/quarto-triplo.jpg?v=13',
-  quartoTriplo2:           'img/quarto-triplo.jpg?v=13',
+  quartoCasalDuplo:        'img/quarto-casal-hotel-ourolandia-ba.jpg?v=16',
+  quartoTriplo:            'img/quarto-triplo-familia-hotel-ourolandia.jpg?v=16',
+  quartoTriplo2:           'img/quarto-triplo-familia-hotel-ourolandia.jpg?v=16',
   quartoTriploTV:          'img/frigobar.jpg?v=13',
   quartoTriploBanheiro:    'img/banheiro-triplo.jpg?v=13',
   quartoTriploChuveiro:    'img/banheiro-triplo.jpg?v=13',
   quartoSolteiroDuplo:     'img/quarto_solteiro.png?v=13',
-  quartoStandard:          'img/quarto-casal.jpg?v=13',
-  quartoStandard2:         'img/quarto-casal.jpg?v=13',
-  quartoSuperior:    'img/quarto-casal.jpg?v=13',
-  quartoSuiteMaster: 'img/quarto-triplo.jpg?v=13',
-  quartoSuiteFamilia:'img/quarto-triplo.jpg?v=13',
+  quartoStandard:          'img/quarto-casal-hotel-ourolandia-ba.jpg?v=16',
+  quartoStandard2:         'img/quarto-casal-hotel-ourolandia-ba.jpg?v=16',
+  quartoSuperior:    'img/quarto-casal-hotel-ourolandia-ba.jpg?v=16',
+  quartoSuiteMaster: 'img/quarto-triplo-familia-hotel-ourolandia.jpg?v=16',
+  quartoSuiteFamilia:'img/quarto-triplo-familia-hotel-ourolandia.jpg?v=16',
 
   /* Avatares */
   avatar1: 'img/icone.png?v=15',
