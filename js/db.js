@@ -93,12 +93,14 @@ const DB = {
       { id: 'q03', numero: "03", andar: "Térreo", tipo: "triplo", camas: "1 cama de casal + 1 solteiro", capacidade: 3, preco: 190, preco_1p: 190, preco_2p: 270, preco_3p: 330, status: "disponivel", descricao: "Quarto triplo com cama de casal e solteiro.", amenities: ["Wi-Fi", "Ar condicionado", "TV"] },
       { id: 'q04', numero: "04", andar: "Térreo", tipo: "duplo_solteiro", camas: "2 camas de solteiro", capacidade: 2, preco: 150, preco_1p: 150, preco_2p: 270, preco_3p: null, status: "disponivel", descricao: "Quarto duplo solteiro espaçoso.", amenities: ["Wi-Fi", "Ar condicionado", "TV"] },
       { id: 'q05', numero: "05", andar: "Térreo", tipo: "casal", camas: "1 cama de casal", capacidade: 2, preco: 190, preco_1p: 190, preco_2p: 270, preco_3p: null, status: "disponivel", descricao: "Conforto em quarto de casal.", amenities: ["Wi-Fi", "Ar condicionado", "TV"] },
+      { id: 'q06', numero: "06", andar: "Térreo", tipo: "casal", camas: "1 cama de casal", capacidade: 2, preco: 190, preco_1p: 190, preco_2p: 270, preco_3p: null, status: "disponivel", descricao: "Quarto de casal aconchegante no térreo.", amenities: ["Wi-Fi", "Ar condicionado", "TV"] },
       { id: 'q07', numero: "07", andar: "Térreo", tipo: "solteiro", camas: "1 cama de solteiro", capacidade: 1, preco: 150, preco_1p: 150, preco_2p: null, preco_3p: null, status: "disponivel", descricao: "Quarto prático para viajante solo.", amenities: ["Wi-Fi", "Ar condicionado", "TV"] },
       { id: 'q08', numero: "08", andar: "Térreo", tipo: "casal", camas: "1 cama de casal", capacidade: 2, preco: 190, preco_1p: 190, preco_2p: 270, preco_3p: null, status: "disponivel", descricao: "Quarto de casal agradável.", amenities: ["Wi-Fi", "Ar condicionado", "TV"] },
       { id: 'q101', numero: "101", andar: "1º andar", tipo: "triplo", camas: "1 cama de casal + 1 solteiro", capacidade: 3, preco: 190, preco_1p: 190, preco_2p: 270, preco_3p: 330, status: "disponivel", descricao: "Quarto triplo superior com excelente iluminação.", amenities: ["Wi-Fi", "Ar condicionado", "TV", "Frigobar"] },
       { id: 'q102', numero: "102", andar: "1º andar", tipo: "casal", camas: "1 cama de casal", capacidade: 2, preco: 190, preco_1p: 190, preco_2p: 270, preco_3p: null, status: "disponivel", descricao: "Quarto de casal com janela ampla.", amenities: ["Wi-Fi", "Ar condicionado", "TV"] },
       { id: 'q103', numero: "103", andar: "1º andar", tipo: "casal", camas: "1 cama de casal", capacidade: 2, preco: 190, preco_1p: 190, preco_2p: 270, preco_3p: null, status: "disponivel", descricao: "Aconchego e tranquilidade no primeiro andar.", amenities: ["Wi-Fi", "Ar condicionado", "TV"] },
       { id: 'q104', numero: "104", andar: "1º andar", tipo: "casal", camas: "1 cama de casal", capacidade: 2, preco: 190, preco_1p: 190, preco_2p: 270, preco_3p: null, status: "disponivel", descricao: "Quarto padrão casal.", amenities: ["Wi-Fi", "Ar condicionado", "TV"] },
+      { id: 'q105', numero: "105", andar: "1º andar", tipo: "casal", camas: "1 cama de casal", capacidade: 2, preco: 190, preco_1p: 190, preco_2p: 270, preco_3p: null, status: "disponivel", descricao: "Quarto de casal confortável no primeiro andar.", amenities: ["Wi-Fi", "Ar condicionado", "TV"] },
       { id: 'q106', numero: "106", andar: "1º andar", tipo: "casal", camas: "1 cama de casal", capacidade: 2, preco: 190, preco_1p: 190, preco_2p: 270, preco_3p: null, status: "disponivel", descricao: "Quarto iluminado e confortável.", amenities: ["Wi-Fi", "Ar condicionado", "TV"] },
       { id: 'q107', numero: "107", andar: "1º andar", tipo: "casal", camas: "1 cama de casal", capacidade: 2, preco: 190, preco_1p: 190, preco_2p: 270, preco_3p: null, status: "disponivel", descricao: "Conforto clássico para duas pessoas.", amenities: ["Wi-Fi", "Ar condicionado", "TV"] },
       { id: 'q108', numero: "108", andar: "1º andar", tipo: "casal", camas: "1 cama de casal", capacidade: 2, preco: 190, preco_1p: 190, preco_2p: 270, preco_3p: null, status: "disponivel", descricao: "Quarto com bela vista.", amenities: ["Wi-Fi", "Ar condicionado", "TV"] },
@@ -474,14 +476,4 @@ const DB = {
 
   /* ===== Profiles ===== */
   profiles() { return _cache.profiles; },
-  profile(id) { return _cache.profiles.find(p => p.id === id); },
-
-  /* ===== Helpers ===== */
-  formatBRL(v) { return (v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); },
-  formatDate(d) { if (!d) return '—'; const x = typeof d === 'string' ? new Date(d + (d.length === 10 ? 'T12:00:00' : '')) : d; return x.toLocaleDateString('pt-BR'); },
-  formatDateTime(d) { if (!d) return '—'; return new Date(d).toLocaleString('pt-BR'); },
-  diffDays(d1, d2) { return Math.max(0, Math.round((new Date(d2) - new Date(d1)) / 86400000)); },
-};
-
-window.DB = DB;
-window._sb = _sb;
+ 
