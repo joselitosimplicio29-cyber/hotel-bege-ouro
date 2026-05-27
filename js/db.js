@@ -194,10 +194,17 @@ const DB = {
     // Limpa qualquer resíduo do antigo sistema hardcoded
     try { localStorage.removeItem('hc_user'); } catch (_) {}
 
-    const { data, error } = await _sb.auth.signInWithPassword({
+    const authPromise = _sb.auth.signInWithPassword({
       email: String(email || '').trim().toLowerCase(),
       password: senha,
     });
+    const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 10000));
+    let data, error;
+    try {
+      ({ data, error } = await Promise.race([authPromise, timeout]));
+    } catch (e) {
+      return null;
+    }
     if (error || !data?.user) return null;
 
     const { data: prof } = await _sb.from('profiles').select('*').eq('id', data.user.id).single();
@@ -476,28 +483,6 @@ const DB = {
 
   /* ===== Profiles ===== */
   profiles() { return _cache.profiles; },
-  profile(id) { return _cache.profiles.find(p => p.id === id); },
-
-  /* ===== Helpers ===== */
-  formatBRL(v) { return (v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); },
-  formatDate(d) { if (!d) return '—'; const x = typeof d === 'string' ? new Date(d + (d.length === 10 ? 'T12:00:00' : '')) : d; return x.toLocaleDateString('pt-BR'); },
-  formatDateTime(d) { if (!d) return '—'; return new Date(d).toLocaleString('pt-BR'); },
-  diffDays(d1, d2) { return Math.max(0, Math.round((new Date(d2) - new Date(d1)) / 86400000)); },
-};
-
-window.DB = DB;
-window._sb = _sb;
- profile(id) { return _cache.profiles.find(p => p.id === id); },
-
-  /* ===== Helpers ===== */
-  formatBRL(v) { return (v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); },
-  formatDate(d) { if (!d) return '—'; const x = typeof d === 'string' ? new Date(d + (d.length === 10 ? 'T12:00:00' : '')) : d; return x.toLocaleDateString('pt-BR'); },
-  formatDateTime(d) { if (!d) return '—'; return new Date(d).toLocaleString('pt-BR'); },
-  diffDays(d1, d2) { return Math.max(0, Math.round((new Date(d2) - new Date(d1)) / 86400000)); },
-};
-
-window.DB = DB;
-window._sb = _sb;
   profile(id) { return _cache.profiles.find(p => p.id === id); },
 
   /* ===== Helpers ===== */
