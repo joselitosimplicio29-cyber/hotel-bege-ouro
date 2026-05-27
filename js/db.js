@@ -476,4 +476,36 @@ const DB = {
 
   /* ===== Profiles ===== */
   profiles() { return _cache.profiles; },
- 
+  profile(id) { return _cache.profiles.find(p => p.id === id); },
+
+  /* ===== Helpers ===== */
+  formatBRL(v) { return (v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); },
+  formatDate(d) { if (!d) return '—'; const x = typeof d === 'string' ? new Date(d + (d.length === 10 ? 'T12:00:00' : '')) : d; return x.toLocaleDateString('pt-BR'); },
+  formatDateTime(d) { if (!d) return '—'; return new Date(d).toLocaleString('pt-BR'); },
+  diffDays(d1, d2) { return Math.max(0, Math.round((new Date(d2) - new Date(d1)) / 86400000)); },
+};
+
+window.DB = DB;
+window._sb = _sb;
+ profile(id) { return _cache.profiles.find(p => p.id === id); },
+
+  /* ===== Helpers ===== */
+  formatBRL(v) { return (v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); },
+  formatDate(d) { if (!d) return '—'; const x = typeof d === 'string' ? new Date(d + (d.length === 10 ? 'T12:00:00' : '')) : d; return x.toLocaleDateString('pt-BR'); },
+  formatDateTime(d) { if (!d) return '—'; return new Date(d).toLocaleString('pt-BR'); },
+  diffDays(d1, d2) { return Math.max(0, Math.round((new Date(d2) - new Date(d1)) / 86400000)); },
+};
+
+window.DB = DB;
+window._sb = _sb;
+  profile(id) { return _cache.profiles.find(p => p.id === id); },
+
+  /* ===== Helpers ===== */
+  formatBRL(v) { return (v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); },
+  formatDate(d) { if (!d) return '—'; const x = typeof d === 'string' ? new Date(d + (d.length === 10 ? 'T12:00:00' : '')) : d; return x.toLocaleDateString('pt-BR'); },
+  formatDateTime(d) { if (!d) return '—'; return new Date(d).toLocaleString('pt-BR'); },
+  diffDays(d1, d2) { return Math.max(0, Math.round((new Date(d2) - new Date(d1)) / 86400000)); },
+};
+
+window.DB = DB;
+window._sb = _sb;
