@@ -31,6 +31,13 @@ function _withTimeout(promise, fallback = { data: null, error: null }) {
   ]);
 }
 
+function _withRejectTimeout(promise, ms = REMOTE_TIMEOUT_MS) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), ms)),
+  ]);
+}
+
 function _localId(prefix) {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
@@ -169,10 +176,24 @@ const DB = {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'reservations' }, async () => {
         const { data } = await _sb.from('reservations').select('*').order('criada_em', { ascending: false });
         _cache.reservations = (data || []).map(_mapReservation);
+        await this.refreshRoomStatuses();
         if (window.App?.view === 'reservas') window.App.view_reservas?.();
         if (window.App?.view === 'checkin')  window.App.view_checkin?.();
         if (window.App?.view === 'inicio')   window.App.view_inicio?.();
         if (window.App?.view === 'mapa')     window.App.view_mapa?.();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'rooms' }, async () => {
+        // Busca apenas os status atualizados e aplica no cache local
+        const { data } = await _sb.from('rooms').select('id, numero, status');
+        if (data) {
+          for (const row of data) {
+            const q = _cache.rooms.find(r => r.id === row.id || r.numero === String(row.numero));
+            if (q) q.status = row.status;
+          }
+        }
+        if (window.App?.view === 'mapa')    window.App.view_mapa?.();
+        if (window.App?.view === 'inicio')  window.App.view_inicio?.();
+        if (window.App?.view === 'quartos') window.App.view_quartos?.();
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'payments' }, async () => {
         const { data } = await _sb.from('payments').select('*').order('data', { ascending: false });
@@ -207,7 +228,10 @@ const DB = {
     }
     if (error || !data?.user) return null;
 
-    const { data: prof } = await _sb.from('profiles').select('*').eq('id', data.user.id).single();
+    const { data: prof } = await _withRejectTimeout(
+      _sb.from('profiles').select('*').eq('id', data.user.id).single(),
+      10000
+    );
     if (!prof) {
       // Usuário existe no Auth mas não tem profile cadastrado → bloqueia
       await _sb.auth.signOut();
@@ -229,10 +253,20 @@ const DB = {
     if (!_sb) return null;
 
     // SEMPRE valida com o Supabase — nunca confia apenas em localStorage
-    const { data: { user } } = await _sb.auth.getUser();
+    let user = null;
+    try {
+      const res = await _withRejectTimeout(_sb.auth.getUser(), 10000);
+      user = res?.data?.user || null;
+    } catch (err) {
+      console.warn('Nao foi possivel validar a sessao do usuario.', err);
+      return null;
+    }
     if (!user) return null;
 
-    const { data: prof } = await _sb.from('profiles').select('*').eq('id', user.id).single();
+    const { data: prof } = await _withRejectTimeout(
+      _sb.from('profiles').select('*').eq('id', user.id).single(),
+      10000
+    );
     if (!prof) return null;
 
     _cache._currentUser = { id: user.id, email: user.email, ...prof };
@@ -429,13 +463,21 @@ const DB = {
   },
   async refreshRoomStatuses() {
     const today = new Date().toISOString().slice(0, 10);
+    const updates = [];
     for (const q of _cache.rooms) {
       if (['limpeza','manutencao'].includes(q.status)) continue;
-      // Considera apenas reservas que cobrem a data de hoje (entrada <= hoje < saida).
-      // Reservas futuras NAO bloqueiam o quarto: ele segue "disponivel".
-      const ativa = _cache.reservations.find(r => r.quartoId === q.id && !['cancelada','finalizada'].includes(r.statusReserva) && r.entrada <= today && r.saida > today);
+      // Considera reservas ativas que cobrem hoje (entrada <= hoje <= saida).
+      // O quarto permanece ocupado/reservado até e incluindo o dia de saída (checkout).
+      const ativa = _cache.reservations.find(r => r.quartoId === q.id && !['cancelada','finalizada'].includes(r.statusReserva) && r.entrada <= today && r.saida >= today);
       const ns = ativa ? (ativa.statusReserva === 'em_hospedagem' ? 'ocupado' : 'reservado') : 'disponivel';
-      if (q.status !== ns) { q.status = ns; }
+      if (q.status !== ns) {
+        q.status = ns;
+        updates.push({ id: q.id, status: ns });
+      }
+    }
+    // Persiste mudanças no Supabase
+    for (const u of updates) {
+      await _sb.from('rooms').update({ status: u.status, updated_at: new Date().toISOString() }).eq('id', u.id);
     }
   },
 
@@ -449,6 +491,31 @@ const DB = {
 
   /* ===== Pagamentos ===== */
   payments(reservaId = null) { const a = _cache.payments; return reservaId ? a.filter(p => p.reservaId === reservaId) : a; },
+  async syncReservationPayment(reservaId) {
+    const r = _cache.reservations.find(x => x.id === reservaId);
+    if (!r) return null;
+
+    const totalPago = _cache.payments
+      .filter(p => p.reservaId === reservaId)
+      .reduce((s, p) => s + Number(p.valor || 0), 0);
+
+    r.valorPago = totalPago;
+    r.valorRestante = Math.max(0, Number(r.valorTotal || 0) - totalPago);
+    r.statusPagamento = r.valorRestante <= 0 ? 'pago' : totalPago > 0 ? 'parcial' : 'pendente';
+    if (r.statusPagamento === 'pago' && ['pendente', 'confirmada'].includes(r.statusReserva)) {
+      r.statusReserva = 'confirmada';
+    }
+
+    if (_sb) {
+      await _sb.from('reservations').update({
+        valor_pago: r.valorPago,
+        valor_restante: r.valorRestante,
+        status_pagamento: r.statusPagamento,
+        status_reserva: r.statusReserva,
+      }).eq('id', reservaId);
+    }
+    return r;
+  },
   async updateReservationPaymentFields(r) {
     try {
       await _sb.from('reservations').update({ valor_pago: r.valorPago, valor_restante: r.valorRestante, status_pagamento: r.statusPagamento }).eq('id', r.id);
@@ -457,40 +524,11 @@ const DB = {
   async deletePayment(pagamentoId, reservaId) {
     await _sb.from('payments').delete().eq('id', pagamentoId);
     _cache.payments = _cache.payments.filter(p => p.id !== pagamentoId);
-    const r = _cache.reservations.find(x => x.id === reservaId);
-    if (r) {
-      const totalPago = _cache.payments.filter(p => p.reservaId === reservaId).reduce((s,p) => s + p.valor, 0);
-      r.valorPago = totalPago;
-      r.valorRestante = Math.max(0, r.valorTotal - totalPago);
-      r.statusPagamento = totalPago >= r.valorTotal ? 'pago' : totalPago > 0 ? 'parcial' : 'pendente';
-      r.statusReserva = totalPago >= r.valorTotal ? 'confirmada' : 'pendente';
-      await _sb.from('reservations').update({ valor_pago: r.valorPago, valor_restante: r.valorRestante, status_pagamento: r.statusPagamento, status_reserva: r.statusReserva }).eq('id', reservaId);
-    }
+    await this.syncReservationPayment(reservaId);
   },
   async addPayment(p) {
     const payload = { reserva_id: p.reservaId, valor: p.valor, forma: p.forma, data: p.data || new Date().toISOString() };
-    const { data } = await _sb.from('payments').insert(payload).select().single();
-    const m = _mapPayment(data); _cache.payments.unshift(m);
-        const r = _cache.reservations.find(x => x.id === p.reservaId);
-    if (r) {
-      r.valorPago = (r.valorPago || 0) + p.valor;
-      r.valorRestante = Math.max(0, r.valorTotal - r.valorPago);
-      r.statusPagamento = r.valorRestante === 0 ? 'pago' : (r.valorPago > 0 ? 'parcial' : 'pendente');
-      await _sb.from('reservations').update({ valor_pago: r.valorPago, valor_restante: r.valorRestante, status_pagamento: r.statusPagamento }).eq('id', p.reservaId);
-    }
-    return m;
-  },
-
-  /* ===== Profiles ===== */
-  profiles() { return _cache.profiles; },
-  profile(id) { return _cache.profiles.find(p => p.id === id); },
-
-  /* ===== Helpers ===== */
-  formatBRL(v) { return (v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); },
-  formatDate(d) { if (!d) return '—'; const x = typeof d === 'string' ? new Date(d + (d.length === 10 ? 'T12:00:00' : '')) : d; return x.toLocaleDateString('pt-BR'); },
-  formatDateTime(d) { if (!d) return '—'; return new Date(d).toLocaleString('pt-BR'); },
-  diffDays(d1, d2) { return Math.max(0, Math.round((new Date(d2) - new Date(d1)) / 86400000)); },
-};
-
-window.DB = DB;
-window._sb = _sb;
+    if (!_sb) {
+      const m = { id: _localId('payment'), reservaId: p.reservaId, valor: Number(p.valor), forma: p.forma, data: payload.data };
+      _cache.payments.unshift(m);
+      await this.syncReserv

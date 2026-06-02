@@ -50,11 +50,34 @@ const App = {
   },
 
   async init() {
-    document.getElementById('content').innerHTML = '<div style="padding:60px; text-align:center; color:var(--cinza-texto);">Carregando...</div>';
-    await DB.load();
-    this.user = await DB.currentUser();
-    if (!this.user) { location.href = 'login.html'; return; }
-    await DB.refreshRoomStatuses();
+    const content = document.getElementById('content');
+    const showLoadError = (err) => {
+      console.error('Falha ao carregar dashboard:', err);
+      content.innerHTML = `
+        <div class="card" style="max-width:720px; margin:40px auto;">
+          <div class="card-head"><h2>Nao foi possivel carregar a dashboard</h2></div>
+          <div class="card-body">
+            <p style="color:var(--cinza-texto); line-height:1.7; margin-bottom:18px;">
+              Verifique sua conexao, tente limpar o cache do navegador ou acesse novamente pela tela de login.
+            </p>
+            <div style="display:flex; gap:12px; flex-wrap:wrap;">
+              <a class="btn btn-primary" href="login.html">Ir para o login</a>
+              <button class="btn btn-outline" onclick="location.reload()">Tentar novamente</button>
+            </div>
+          </div>
+        </div>`;
+    };
+
+    content.innerHTML = '<div style="padding:60px; text-align:center; color:var(--cinza-texto);">Carregando...</div>';
+    try {
+      await DB.load();
+      this.user = await DB.currentUser();
+      if (!this.user) { location.href = 'login.html'; return; }
+      await DB.refreshRoomStatuses();
+    } catch (err) {
+      showLoadError(err);
+      return;
+    }
 
     document.getElementById('userName').textContent = this.user.nome;
     document.getElementById('userRole').textContent = this.user.perfil;
@@ -74,7 +97,11 @@ const App = {
       document.getElementById('sidebar').classList.toggle('open');
     });
 
-    this.go('inicio');
+    try {
+      this.go('inicio');
+    } catch (err) {
+      showLoadError(err);
+    }
   },
 
   go(view) {
@@ -525,10 +552,10 @@ const App = {
     const total = daily * diarias;
     const r = await DB.saveReservation({
       clienteId, quartoId, entrada, saida, diarias, hospedes,
-      valorDiaria: daily, valorTotal: total, valorPago: pago, valorRestante: total - pago,
+      valorDiaria: daily, valorTotal: total, valorPago: 0, valorRestante: total,
       formaPagamento: forma,
-      statusPagamento: pago >= total ? 'pago' : pago > 0 ? 'parcial' : 'pendente',
-      statusReserva: pago >= total ? 'confirmada' : 'pendente',
+      statusPagamento: 'pendente',
+      statusReserva: 'pendente',
       origem: 'manual', observacoes: obs,
     });
     if (pago > 0) await DB.addPayment({ reservaId: r.id, valor: pago, forma });
@@ -676,17 +703,24 @@ const App = {
     if (!r) return;
     const cli = DB.client(r.clienteId);
     const nomeCliente = cli?.nome || 'este cliente';
-    if (!confirm(`Confirmar pagamento da reserva ${r.codigo} de ${nomeCliente}?\nValor: ${DB.formatBRL(r.valorTotal)}\n\nEsta ação irá alterar o status para "Pagamento confirmado".`)) return;
+    const pgs = DB.payments(reservaId);
+    const valorPagoReal = pgs.reduce((s, p) => s + p.valor, 0);
+    const restante = Math.max(0, r.valorTotal - valorPagoReal);
+
+    if (restante <= 0) {
+      await DB.saveReservation({ ...r, statusReserva: 'confirmada', statusPagamento: 'pago', valorPago: valorPagoReal, valorRestante: 0 });
+      this.toast('Reserva ja esta paga. Status confirmado.');
+      this.closeModal();
+      this._refreshView();
+      return;
+    }
+
+    if (!confirm(`Confirmar pagamento da reserva ${r.codigo} de ${nomeCliente}?\nValor restante: ${DB.formatBRL(restante)}\n\nEsta ação irá lançar apenas o saldo restante e alterar o status para "Pagamento confirmado".`)) return;
     try {
-      // Atualiza status da reserva para confirmada
-      await DB.saveReservation({ ...r, statusReserva: 'confirmada', statusPagamento: 'pago', valorPago: r.valorTotal, valorRestante: 0 });
-      // Registra o pagamento no financeiro
-      await DB.addPayment({ reservaId, valor: r.valorTotal, forma: r.formaPagamento || 'whatsapp' });
+      await DB.addPayment({ reservaId, valor: restante, forma: r.formaPagamento || 'whatsapp' });
       this.toast('Pagamento confirmado com sucesso! Reserva atualizada.');
       this.closeModal();
-      if (this.view === 'reservas') this.view_reservas();
-      else if (this.view === 'inicio') this.view_inicio();
-      else if (this.view === 'pagamentos') this.view_pagamentos();
+      this._refreshView();
     } catch(err) {
       console.error(err);
       this.toast('Erro ao confirmar pagamento.', 'error');
@@ -801,6 +835,7 @@ const App = {
     if (this.view === 'reservas') this.view_reservas();
     else if (this.view === 'mapa') this.view_mapa();
     else if (this.view === 'checkin') this.view_checkin();
+    else if (this.view === 'pagamentos') this.view_pagamentos();
     else this.view_inicio();
   },
 
@@ -1469,6 +1504,11 @@ const App = {
       const valor = parseFloat(document.getElementById('pgValor').value);
       const forma = document.getElementById('pgForma').value;
       if (!valor || valor <= 0) { this.toast('Valor inválido.', 'error'); return; }
+      const r = DB.reservation(reservaId);
+      const totalPago = DB.payments(reservaId).reduce((s, p) => s + p.valor, 0);
+      const restante = Math.max(0, (r?.valorTotal || 0) - totalPago);
+      if (restante <= 0) { this.toast('Esta reserva ja esta paga.', 'error'); return; }
+      if (valor > restante + 0.01 && !confirm(`O valor informado (${DB.formatBRL(valor)}) e maior que o restante (${DB.formatBRL(restante)}). Confirmar mesmo assim?`)) return;
       await DB.addPayment({ reservaId, valor, forma });
       this.toast('Pagamento lançado!');
       this.closeModal();
@@ -1585,4 +1625,19 @@ const App = {
   },
 };
 
-document.addEventListener('DOMContentLoaded', () => App.init());
+document.addEventListener('DOMContentLoaded', () => {
+  App.init().catch(err => {
+    console.error('Falha inesperada na dashboard:', err);
+    const content = document.getElementById('content');
+    if (content) {
+      content.innerHTML = `
+        <div class="card" style="max-width:720px; margin:40px auto;">
+          <div class="card-head"><h2>Erro ao abrir a dashboard</h2></div>
+          <div class="card-body">
+            <p style="color:var(--cinza-texto); line-height:1.7;">Atualize a pagina ou entre novamente pelo login.</p>
+            <a class="btn btn-primary" href="login.html">Ir para o login</a>
+          </div>
+        </div>`;
+    }
+  });
+});
