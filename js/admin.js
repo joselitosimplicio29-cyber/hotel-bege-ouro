@@ -5,6 +5,7 @@
 const App = {
   user: null,
   view: 'inicio',
+  ready: false,
 
   /* ===== Permissões ===== */
   perms: {
@@ -12,7 +13,37 @@ const App = {
     funcionario: ['inicio','mapa','reservas','checkin','consumo','clientes'],
     financeiro: ['inicio','pagamentos','relatorios','reservas'],
   },
-  can(view) { return this.perms[this.user?.perfil]?.includes(view); },
+  normalizePerfil(perfil = '') {
+    const p = String(perfil || '').trim().toLowerCase();
+    if (['admin', 'administrador', 'administrator'].includes(p)) return 'admin';
+    if (['funcionario', 'funcionário', 'recepcao', 'recepção'].includes(p)) return 'funcionario';
+    if (['financeiro', 'finance'].includes(p)) return 'financeiro';
+    return p;
+  },
+  resolvePerfil(user = this.user) {
+    if (!user) return '';
+    const fields = [
+      user.perfil,
+      user.role,
+      user.cargo,
+      user.tipo,
+      user.profile,
+      user.funcao,
+      user.user_metadata?.perfil,
+      user.app_metadata?.perfil,
+    ];
+    for (const field of fields) {
+      const perfil = this.normalizePerfil(field);
+      if (this.perms[perfil]) return perfil;
+    }
+    const savedProfile = DB.profile?.(user.id);
+    const savedPerfil = this.normalizePerfil(savedProfile?.perfil || savedProfile?.role || savedProfile?.cargo || savedProfile?.tipo);
+    if (this.perms[savedPerfil]) return savedPerfil;
+    const email = String(user.email || '').trim().toLowerCase();
+    if (email === 'admin@begeouro.com' || email === 'admin@hotelbegeouro.com.br' || email === 'begeourohotel@hotmail.com') return 'admin';
+    return '';
+  },
+  can(view) { return this.perms[this.resolvePerfil()]?.includes(view); },
 
   PRECOS: {
     solteiro_1p: 150,
@@ -69,10 +100,31 @@ const App = {
     };
 
     content.innerHTML = '<div style="padding:60px; text-align:center; color:var(--cinza-texto);">Carregando...</div>';
+
+    document.querySelectorAll('.sb-nav a').forEach(a => {
+      const v = a.dataset.view;
+      a.href = `#${v}`;
+      a.addEventListener('click', e => {
+        e.preventDefault();
+        if (!this.ready) {
+          location.hash = v;
+          return;
+        }
+        this.go(v);
+      });
+    });
+
+    window.addEventListener('hashchange', () => {
+      if (!this.ready) return;
+      const v = (location.hash || '#inicio').slice(1);
+      if (v) this.go(v);
+    });
+
     try {
       await DB.load();
       this.user = await DB.currentUser();
       if (!this.user) { location.href = 'login.html'; return; }
+      this.user.perfil = this.resolvePerfil(this.user);
       await DB.refreshRoomStatuses();
     } catch (err) {
       showLoadError(err);
@@ -80,13 +132,12 @@ const App = {
     }
 
     document.getElementById('userName').textContent = this.user.nome;
-    document.getElementById('userRole').textContent = this.user.perfil;
+    document.getElementById('userRole').textContent = this.user.perfil.toUpperCase();
 
     /* nav */
     document.querySelectorAll('.sb-nav a').forEach(a => {
       const v = a.dataset.view;
       if (!this.can(v)) a.style.display = 'none';
-      a.addEventListener('click', e => { e.preventDefault(); this.go(v); });
     });
     document.getElementById('logoutBtn').addEventListener('click', async e => {
       e.preventDefault(); await DB.logout(); location.href = 'login.html';
@@ -97,8 +148,11 @@ const App = {
       document.getElementById('sidebar').classList.toggle('open');
     });
 
+    this.ready = true;
+
     try {
-      this.go('inicio');
+      const initialView = (location.hash || '#inicio').slice(1);
+      this.go(initialView || 'inicio');
     } catch (err) {
       showLoadError(err);
     }
@@ -114,7 +168,27 @@ const App = {
     document.querySelectorAll('.sb-nav a').forEach(a => a.classList.toggle('active', a.dataset.view === view));
     if (window.innerWidth <= 880) document.getElementById('sidebar').classList.remove('open');
     const fn = `view_${view}`;
-    if (this[fn]) this[fn]();
+    if (!this[fn]) return;
+    try {
+      this[fn]();
+      if (location.hash !== `#${view}`) history.replaceState(null, '', `#${view}`);
+    } catch (err) {
+      console.error(`Falha ao abrir a aba ${view}:`, err);
+      this.render(`
+        <div class="card" style="max-width:720px; margin:40px auto;">
+          <div class="card-head"><h2>Nao foi possivel abrir esta aba</h2></div>
+          <div class="card-body">
+            <p style="color:var(--cinza-texto); line-height:1.7; margin-bottom:18px;">
+              Atualize a pagina com Ctrl + F5. Se continuar, entre novamente pelo login.
+            </p>
+            <div style="display:flex; gap:12px; flex-wrap:wrap;">
+              <button class="btn btn-primary" onclick="location.reload()">Atualizar</button>
+              <a class="btn btn-outline" href="login.html">Ir para o login</a>
+            </div>
+          </div>
+        </div>`, 'Erro');
+      this.toast('Erro ao abrir a aba. Atualize a pagina.', 'error');
+    }
   },
 
   render(html, title = '', actions = '') {
@@ -718,12 +792,25 @@ const App = {
     if (!confirm(`Confirmar pagamento da reserva ${r.codigo} de ${nomeCliente}?\nValor restante: ${DB.formatBRL(restante)}\n\nEsta ação irá lançar apenas o saldo restante e alterar o status para "Pagamento confirmado".`)) return;
     try {
       await DB.addPayment({ reservaId, valor: restante, forma: r.formaPagamento || 'whatsapp' });
+      const atualizada = DB.reservation(reservaId);
+      if (atualizada && atualizada.statusReserva !== 'confirmada') {
+        await DB.saveReservation({
+          ...atualizada,
+          statusReserva: 'confirmada',
+          statusPagamento: 'pago',
+          valorPago: atualizada.valorTotal,
+          valorRestante: 0,
+        });
+      }
       this.toast('Pagamento confirmado com sucesso! Reserva atualizada.');
       this.closeModal();
       this._refreshView();
     } catch(err) {
       console.error(err);
-      this.toast('Erro ao confirmar pagamento.', 'error');
+      await DB.forceConfirmPayment(reservaId, restante, r.formaPagamento || 'whatsapp');
+      this.toast('Pagamento confirmado localmente. Atualize depois com internet.');
+      this.closeModal();
+      this._refreshView();
     }
   },
 
@@ -841,10 +928,18 @@ const App = {
 
   async cancelReserva(id) {
     if (!confirm('Tem certeza que quer cancelar essa reserva?')) return;
-    await DB.cancelReservation(id);
-    this.toast('Reserva cancelada.');
-    this.closeModal();
-    this.view_reservas();
+    try {
+      await DB.cancelReservation(id);
+      this.toast('Reserva cancelada.');
+      this.closeModal();
+      this._refreshView();
+    } catch (err) {
+      console.error(err);
+      await DB.forceCancelReservation(id);
+      this.toast('Reserva cancelada localmente. Atualize depois com internet.');
+      this.closeModal();
+      this._refreshView();
+    }
   },
 
   prorrogarReserva(id) {
@@ -852,18 +947,22 @@ const App = {
     if (!r) return;
     const cli = DB.client(r.clienteId);
     const room = DB.room(r.quartoId);
+    const saidaAtual = r.saida;
+    const nextDate = new Date(`${saidaAtual}T12:00:00`);
+    nextDate.setDate(nextDate.getDate() + 1);
+    const primeiraSaidaValida = nextDate.toISOString().slice(0, 10);
     const body = `
-      <div style="background:var(--creme); padding:16px; border-radius:8px; margin-bottom:20px; font-size:0.9rem;">
+      <div style="background:var(--cinza-fundo); padding:16px; border-radius:8px; margin-bottom:20px; font-size:0.9rem;">
         <strong>${cli?.nome || '—'}</strong> · Quarto ${room?.numero} · ${DB.formatDate(r.entrada)} → <strong>${DB.formatDate(r.saida)}</strong><br>
         <span style="color:var(--cinza-texto);">Diária atual: ${DB.formatBRL(r.valorDiaria)} · Total atual: ${DB.formatBRL(r.valorTotal)}</span>
       </div>
       <div class="form-grid">
         <div class="form-row full">
           <label class="field">Nova data de saída</label>
-          <input type="date" id="prorSaida" value="${r.saida}" min="${r.saida}">
-          <div class="field-error" id="errProrSaida">Escolha uma data posterior à saída atual.</div>
+          <input type="date" id="prorSaida" value="${primeiraSaidaValida}" min="${primeiraSaidaValida}">
+          <div class="field-error" id="errProrSaida">Escolha uma data a partir de ${DB.formatDate(primeiraSaidaValida)}.</div>
         </div>
-        <div class="form-row full" id="prorPreview" style="display:none; background:var(--creme); padding:14px; border-radius:8px; font-size:0.88rem; color:var(--escuro);">
+        <div class="form-row full" id="prorPreview" style="display:none; background:var(--cinza-fundo); padding:14px; border-radius:8px; font-size:0.88rem; color:var(--escuro);">
         </div>
       </div>`;
     const foot = `
@@ -900,6 +999,7 @@ const App = {
       };
       inp.addEventListener('change', atualiza);
       inp.addEventListener('input', atualiza);
+      atualiza();
     }, 100);
   },
 
@@ -910,6 +1010,7 @@ const App = {
     const err = document.getElementById('errProrSaida');
     if (!novaSaida || novaSaida <= r.saida) {
       if (err) err.classList.add('show');
+      this.toast(`Escolha uma data depois de ${DB.formatDate(r.saida)}.`, 'error');
       return;
     }
     const diasExtras = DB.diffDays(r.saida, novaSaida);
