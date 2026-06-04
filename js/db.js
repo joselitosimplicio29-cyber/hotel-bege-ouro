@@ -5,24 +5,42 @@
    ============================================================ */
 
 /* === Instância Supabase === */
-const _sb = (() => {
+let _sb = null;
+
+function _getSB() {
+  if (_sb) return _sb;
   if (!window.supabase?.createClient || !window.SUPABASE_CONFIG?.url || !window.SUPABASE_CONFIG?.anonKey) {
-    console.warn('Supabase indisponivel. Usando dados locais do site.');
     return null;
   }
 
   try {
-    return window.supabase.createClient(
+    _sb = window.supabase.createClient(
       window.SUPABASE_CONFIG.url,
       window.SUPABASE_CONFIG.anonKey
     );
+    return _sb;
   } catch (err) {
     console.warn('Nao foi possivel iniciar o Supabase. Usando dados locais do site.', err);
     return null;
   }
-})();
+}
 
-const REMOTE_TIMEOUT_MS = 8000;
+async function _waitForSB(timeout = 2500) {
+  if (_getSB()) return _sb;
+  try {
+    if (window.__supabaseReady) {
+      await Promise.race([
+        window.__supabaseReady,
+        new Promise(resolve => setTimeout(resolve, timeout)),
+      ]);
+    }
+  } catch (_) {}
+  return _getSB();
+}
+
+const REMOTE_TIMEOUT_MS = 2500;
+const OFFLINE_CACHE_KEY = 'hotel_ourobege_admin_cache_v1';
+const OFFLINE_USER_KEY = 'hotel_ourobege_admin_user_v1';
 
 function _withTimeout(promise, fallback = { data: null, error: null }) {
   return Promise.race([
@@ -50,6 +68,61 @@ const _cache = {
   loaded: false,
 };
 
+function _saveOfflineUser(user) {
+  try {
+    if (user) localStorage.setItem(OFFLINE_USER_KEY, JSON.stringify(user));
+  } catch (_) {}
+}
+
+function _loadOfflineUser() {
+  try {
+    return JSON.parse(localStorage.getItem(OFFLINE_USER_KEY) || 'null');
+  } catch (_) {
+    return null;
+  }
+}
+
+function _isNetworkAuthError(error) {
+  const msg = String(error?.message || error || '').toLowerCase();
+  return msg.includes('network') || msg.includes('fetch') || msg.includes('timeout') || msg.includes('load failed');
+}
+
+function _isLocalId(id, prefix) {
+  return String(id || '').startsWith(`${prefix}-`);
+}
+
+function _clearOfflineUser() {
+  try { localStorage.removeItem(OFFLINE_USER_KEY); } catch (_) {}
+}
+
+function _saveOfflineCache() {
+  try {
+    localStorage.setItem(OFFLINE_CACHE_KEY, JSON.stringify({
+      clients: _cache.clients,
+      reservations: _cache.reservations,
+      consumptions: _cache.consumptions,
+      payments: _cache.payments,
+      profiles: _cache.profiles,
+      savedAt: new Date().toISOString(),
+    }));
+  } catch (_) {}
+}
+
+function _loadOfflineCache() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(OFFLINE_CACHE_KEY) || 'null');
+    if (!saved) return false;
+    if (Array.isArray(saved.clients)) _cache.clients = saved.clients;
+    if (Array.isArray(saved.reservations)) _cache.reservations = saved.reservations;
+    if (Array.isArray(saved.consumptions)) _cache.consumptions = saved.consumptions;
+    if (Array.isArray(saved.payments)) _cache.payments = saved.payments;
+    if (Array.isArray(saved.profiles)) _cache.profiles = saved.profiles;
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+
 /* === Mappers snake_case → camelCase === */
 function _mapReservation(r) {
   if (!r) return null;
@@ -75,9 +148,17 @@ function _mapConsumption(c) {
   if (!c) return null;
   return { id: c.id, reservaId: c.reserva_id, produto: c.produto, qtd: c.qtd, valorUnit: Number(c.valor_unit), valorTotal: Number(c.valor_total), funcionarioId: c.funcionario_id, dataHora: c.data_hora };
 }
+function _profilePerfil(p = {}) {
+  const raw = p.perfil ?? p.role ?? p.cargo ?? p.tipo ?? p.profile ?? p.funcao;
+  const value = String(raw || '').trim().toLowerCase();
+  if (['admin', 'administrador', 'administrator'].includes(value)) return 'admin';
+  if (['funcionario', 'funcionário', 'recepcao', 'recepção'].includes(value)) return 'funcionario';
+  if (['financeiro', 'finance'].includes(value)) return 'financeiro';
+  return value;
+}
 function _mapProfile(p) {
   if (!p) return null;
-  return { id: p.id, nome: p.nome, perfil: p.perfil };
+  return { ...p, id: p.id, nome: p.nome || p.name || p.email || 'Usuario', perfil: _profilePerfil(p) };
 }
 
 /* ============================================================
@@ -106,9 +187,11 @@ const DB = {
       { id: 'q108', numero: "108", andar: "1º andar", tipo: "casal", camas: "1 cama de casal", capacidade: 2, preco: 190, preco_1p: 190, preco_2p: 270, preco_3p: null, status: "disponivel", descricao: "Quarto com bela vista.", amenities: ["Wi-Fi", "Ar condicionado", "TV"] },
     ];
     _cache.rooms        = QUARTOS_FIXOS;
+    const sb = await _waitForSB();
 
     if (_cache.loaded) return;
-    if (!_sb) {
+    if (!sb) {
+      _loadOfflineCache();
       _cache.loaded = true;
       return;
     }
@@ -116,33 +199,39 @@ const DB = {
     // Detecta se usuário tem sessão (admin) ou está como anônimo (cliente público)
     let isAuth = false;
     try {
-      const { data: { user } } = await _sb.auth.getUser();
+      const { data: { user } } = await sb.auth.getUser();
       isAuth = !!user;
     } catch (_) {
-      isAuth = false;
+      isAuth = !!_loadOfflineUser();
     }
 
     try {
       if (isAuth) {
         // ===== Admin autenticado: acesso completo =====
         const [clientsRes, reservsRes, consuRes, paysRes, profRes] = await Promise.all([
-          _withTimeout(_sb.from('clients').select('*').order('nome')),
-          _withTimeout(_sb.from('reservations').select('*').order('criada_em', { ascending: false })),
-          _withTimeout(_sb.from('consumptions').select('*').order('data_hora', { ascending: false })),
-          _withTimeout(_sb.from('payments').select('*').order('data', { ascending: false })),
-          _withTimeout(_sb.from('profiles').select('*')),
+          _withTimeout(sb.from('clients').select('*').order('nome')),
+          _withTimeout(sb.from('reservations').select('*').order('criada_em', { ascending: false })),
+          _withTimeout(sb.from('consumptions').select('*').order('data_hora', { ascending: false })),
+          _withTimeout(sb.from('payments').select('*').order('data', { ascending: false })),
+          _withTimeout(sb.from('profiles').select('*')),
         ]);
 
-        _cache.clients      = (clientsRes.data || []).map(_mapClient);
-        _cache.reservations = (reservsRes.data || []).map(_mapReservation);
-        _cache.consumptions = (consuRes.data   || []).map(_mapConsumption);
-        _cache.payments     = (paysRes.data    || []).map(_mapPayment);
-        _cache.profiles     = (profRes.data    || []).map(_mapProfile);
-        this._subscribeRealtime();
+        const gotRemoteData = [clientsRes, reservsRes, consuRes, paysRes, profRes].some(res => Array.isArray(res.data));
+        if (gotRemoteData) {
+          _cache.clients      = (clientsRes.data || []).map(_mapClient);
+          _cache.reservations = (reservsRes.data || []).map(_mapReservation);
+          _cache.consumptions = (consuRes.data   || []).map(_mapConsumption);
+          _cache.payments     = (paysRes.data    || []).map(_mapPayment);
+          _cache.profiles     = (profRes.data    || []).map(_mapProfile);
+          _saveOfflineCache();
+          this._subscribeRealtime();
+        } else {
+          _loadOfflineCache();
+        }
       } else {
         // ===== Público anônimo: só campos de disponibilidade, sem PII =====
         const { data } = await _withTimeout(
-          _sb.from('reservations_availability').select('*')
+          sb.from('reservations_availability').select('*')
         );
         _cache.reservations = (data || []).map(r => ({
           id: r.id,
@@ -156,6 +245,7 @@ const DB = {
       }
     } catch (err) {
       console.warn('Nao foi possivel carregar os dados remotos. Usando cache local.', err);
+      _loadOfflineCache();
     } finally {
       _cache.loaded = true;
     }
@@ -163,27 +253,31 @@ const DB = {
 
   _realtimeStarted: false,
   _subscribeRealtime() {
-    if (!_sb || this._realtimeStarted) return;
+    const sb = _getSB();
+    if (!sb || this._realtimeStarted) return;
     this._realtimeStarted = true;
-    _sb.channel('hotel-live')
+    sb.channel('hotel-live')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'reservations' }, async () => {
-        const { data } = await _sb.from('reservations').select('*').order('criada_em', { ascending: false });
+        const { data } = await sb.from('reservations').select('*').order('criada_em', { ascending: false });
         _cache.reservations = (data || []).map(_mapReservation);
         await this.refreshRoomStatuses();
+        _saveOfflineCache();
         if (window.App?.view === 'reservas') window.App.view_reservas?.();
         if (window.App?.view === 'checkin')  window.App.view_checkin?.();
         if (window.App?.view === 'inicio')   window.App.view_inicio?.();
         if (window.App?.view === 'mapa')     window.App.view_mapa?.();
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'payments' }, async () => {
-        const { data } = await _sb.from('payments').select('*').order('data', { ascending: false });
+        const { data } = await sb.from('payments').select('*').order('data', { ascending: false });
         _cache.payments = (data || []).map(_mapPayment);
+        _saveOfflineCache();
         if (window.App?.view === 'pagamentos') window.App.view_pagamentos?.();
         if (window.App?.view === 'inicio')     window.App.view_inicio?.();
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'consumptions' }, async () => {
-        const { data } = await _sb.from('consumptions').select('*').order('data_hora', { ascending: false });
+        const { data } = await sb.from('consumptions').select('*').order('data_hora', { ascending: false });
         _cache.consumptions = (data || []).map(_mapConsumption);
+        _saveOfflineCache();
         if (window.App?.view === 'consumo') window.App.view_consumo?.();
       })
       .subscribe();
@@ -191,12 +285,18 @@ const DB = {
 
   /* ===== Auth (somente via Supabase Auth — sem credenciais hardcoded) ===== */
   async login(email, senha) {
-    if (!_sb) return null;
+    const sb = await _waitForSB();
+    const normalizedEmail = String(email || '').trim().toLowerCase();
+    const cachedUser = _loadOfflineUser();
+    if (!sb) {
+      _cache._currentUser = cachedUser && cachedUser.email === normalizedEmail ? cachedUser : null;
+      return _cache._currentUser;
+    }
     // Limpa qualquer resíduo do antigo sistema hardcoded
     try { localStorage.removeItem('hc_user'); } catch (_) {}
 
-    const authPromise = _sb.auth.signInWithPassword({
-      email: String(email || '').trim().toLowerCase(),
+    const authPromise = sb.auth.signInWithPassword({
+      email: normalizedEmail,
       password: senha,
     });
     const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 10000));
@@ -204,39 +304,77 @@ const DB = {
     try {
       ({ data, error } = await Promise.race([authPromise, timeout]));
     } catch (e) {
-      return null;
+      _cache._currentUser = cachedUser && cachedUser.email === normalizedEmail ? cachedUser : null;
+      return _cache._currentUser;
+    }
+    if (error && _isNetworkAuthError(error)) {
+      _cache._currentUser = cachedUser && cachedUser.email === normalizedEmail ? cachedUser : null;
+      return _cache._currentUser;
     }
     if (error || !data?.user) return null;
 
-    const { data: prof } = await _sb.from('profiles').select('*').eq('id', data.user.id).single();
-    if (!prof) {
+    const { data: prof, error: profError } = await Promise.race([
+      sb.from('profiles').select('*').eq('id', data.user.id).single(),
+      new Promise(resolve => setTimeout(() => resolve({ data: null, error: new Error('profile-timeout') }), 8000)),
+    ]);
+    if (profError || !prof) {
       // Usuário existe no Auth mas não tem profile cadastrado → bloqueia
-      await _sb.auth.signOut();
+      try { await Promise.race([sb.auth.signOut(), new Promise(r => setTimeout(r, 3000))]); } catch (_) {}
       return null;
     }
-    _cache._currentUser = { id: data.user.id, email: data.user.email, ...prof };
+    _cache._currentUser = { id: data.user.id, email: data.user.email, ...prof, perfil: _profilePerfil(prof) };
+    _saveOfflineUser(_cache._currentUser);
     return _cache._currentUser;
+  },
+
+  offlineUser(email = '') {
+    const user = _loadOfflineUser();
+    const normalizedEmail = String(email || '').trim().toLowerCase();
+    if (!normalizedEmail) return user;
+    return user && user.email === normalizedEmail ? user : null;
   },
 
   async logout() {
     try { localStorage.removeItem('hc_user'); } catch (_) {}
-    if (_sb) await _sb.auth.signOut();
+    _clearOfflineUser();
+    const sb = _getSB();
+    if (sb) await sb.auth.signOut();
     _cache._currentUser = null;
     _cache.loaded = false; // força recarregar como anon na próxima navegação
   },
 
   async currentUser() {
     if (_cache._currentUser) return _cache._currentUser;
-    if (!_sb) return null;
+    const sb = await _waitForSB();
+    if (!sb) {
+      _cache._currentUser = _loadOfflineUser();
+      return _cache._currentUser;
+    }
 
     // SEMPRE valida com o Supabase — nunca confia apenas em localStorage
-    const { data: { user } } = await _sb.auth.getUser();
-    if (!user) return null;
+    let user = null;
+    try {
+      ({ data: { user } } = await sb.auth.getUser());
+    } catch (_) {
+      _cache._currentUser = _loadOfflineUser();
+      return _cache._currentUser;
+    }
+    if (!user) {
+      _clearOfflineUser();
+      return null;
+    }
 
-    const { data: prof } = await _sb.from('profiles').select('*').eq('id', user.id).single();
-    if (!prof) return null;
+    const { data: prof, error: profError } = await _withTimeout(
+      sb.from('profiles').select('*').eq('id', user.id).single(),
+      { data: null, error: new Error('profile-timeout') }
+    );
+    if (profError || !prof) {
+      _cache._currentUser = _loadOfflineUser();
+      return _cache._currentUser;
+    }
 
-    _cache._currentUser = { id: user.id, email: user.email, ...prof };
+    _cache._currentUser = { id: user.id, email: user.email, ...prof, perfil: _profilePerfil(prof) };
+    _saveOfflineUser(_cache._currentUser);
     return _cache._currentUser;
   },
 
@@ -259,34 +397,75 @@ const DB = {
   clients() { return _cache.clients; },
   client(id) { return _cache.clients.find(c => c.id === id); },
   async saveClient(c) {
+    const saveLocal = () => {
+      const local = {
+        ...c,
+        id: c.id || _localId('client'),
+        criadoEm: c.criadoEm || new Date().toISOString().slice(0, 10),
+      };
+      const idx = _cache.clients.findIndex(x => x.id === local.id);
+      if (idx >= 0) _cache.clients[idx] = { ..._cache.clients[idx], ...local };
+      else _cache.clients.push(local);
+      _saveOfflineCache();
+      return local;
+    };
+
+    const sb = await _waitForSB(800);
+    if (!sb || _isLocalId(c.id, 'client')) return saveLocal();
+
     const p = { nome: c.nome, cpf: c.cpf, telefone: c.telefone, email: c.email, observacoes: c.observacoes };
-    if (c.id) {
-      await _sb.from('clients').update(p).eq('id', c.id);
-      const idx = _cache.clients.findIndex(x => x.id === c.id);
-      if (idx >= 0) _cache.clients[idx] = { ..._cache.clients[idx], ...c };
-    } else {
-      const { data } = await _sb.from('clients').insert(p).select().single();
-      const mapped = _mapClient(data); _cache.clients.push(mapped); return mapped;
+    try {
+      if (c.id) {
+        const { error } = await _withTimeout(sb.from('clients').update(p).eq('id', c.id), { error: new Error('timeout') });
+        if (error) throw error;
+        const idx = _cache.clients.findIndex(x => x.id === c.id);
+        if (idx >= 0) _cache.clients[idx] = { ..._cache.clients[idx], ...c };
+      } else {
+        const { data, error } = await _withTimeout(sb.from('clients').insert(p).select().single(), { data: null, error: new Error('timeout') });
+        if (error || !data) throw error || new Error('client-insert-timeout');
+        const mapped = _mapClient(data); _cache.clients.push(mapped); _saveOfflineCache(); return mapped;
+      }
+      _saveOfflineCache();
+      return c;
+    } catch (err) {
+      console.warn('Falha ao salvar cliente online. Salvando localmente.', err);
+      return saveLocal();
     }
-    return c;
   },
   async findOrCreateClient({ nome, cpf, telefone, email }) {
-    if (!_sb) {
-      const c = { id: _localId('client'), nome, cpf, telefone, email, observacoes: '', criadoEm: new Date().toISOString().slice(0, 10) };
-      _cache.clients.push(c);
-      return c;
-    }
-
     let c = _cache.clients.find(x => (cpf && x.cpf === cpf) || (email && x.email === email));
     if (c) return c;
-    let query = _sb.from('clients').select('*');
-    if (cpf) query = query.eq('cpf', cpf); else if (email) query = query.eq('email', email);
-    const { data: existing } = await query.maybeSingle();
-    if (existing) { c = _mapClient(existing); _cache.clients.push(c); return c; }
-    const { data } = await _sb.from('clients').insert({ nome, cpf, telefone, email }).select().single();
-    c = _mapClient(data); _cache.clients.push(c); return c;
+
+    const saveLocal = () => {
+      const local = { id: _localId('client'), nome, cpf, telefone, email, observacoes: '', criadoEm: new Date().toISOString().slice(0, 10) };
+      _cache.clients.push(local);
+      _saveOfflineCache();
+      return local;
+    };
+
+    const sb = await _waitForSB(800);
+    if (!sb) return saveLocal();
+
+    try {
+      let query = sb.from('clients').select('*');
+      if (cpf) query = query.eq('cpf', cpf); else if (email) query = query.eq('email', email);
+      const { data: existing, error: existingError } = await _withTimeout(query.maybeSingle(), { data: null, error: null });
+      if (existingError) throw existingError;
+      if (existing) { c = _mapClient(existing); _cache.clients.push(c); _saveOfflineCache(); return c; }
+      const { data, error } = await _withTimeout(sb.from('clients').insert({ nome, cpf, telefone, email }).select().single(), { data: null, error: new Error('timeout') });
+      if (error || !data) throw error || new Error('client-insert-timeout');
+      c = _mapClient(data); _cache.clients.push(c); _saveOfflineCache(); return c;
+    } catch (err) {
+      console.warn('Falha ao buscar/criar cliente online. Salvando localmente.', err);
+      return saveLocal();
+    }
   },
-  async deleteClient(id) { await _sb.from('clients').delete().eq('id', id); _cache.clients = _cache.clients.filter(c => c.id !== id); },
+  async deleteClient(id) {
+    const sb = _getSB();
+    try { if (sb && !_isLocalId(id, 'client')) await sb.from('clients').delete().eq('id', id); } catch (_) {}
+    _cache.clients = _cache.clients.filter(c => c.id !== id);
+    _saveOfflineCache();
+  },
 
   /* ===== Reservas ===== */
   reservations() { return _cache.reservations; },
@@ -304,17 +483,23 @@ const DB = {
     return _cache.rooms.filter(r => r.status !== 'manutencao' && this.isRoomAvailable(r.id, entrada, saida));
   },
   async saveReservation(res) {
-    if (!_sb) {
+    const saveLocal = async () => {
       const local = {
         ...res,
         id: res.id || _localId('reservation'),
         codigo: res.codigo || _reservationCode(),
         criadaEm: new Date().toISOString(),
       };
-      _cache.reservations.unshift(local);
+      const idx = _cache.reservations.findIndex(r => r.id === local.id);
+      if (idx >= 0) _cache.reservations[idx] = { ..._cache.reservations[idx], ...local };
+      else _cache.reservations.unshift(local);
       await this.refreshRoomStatuses();
+      _saveOfflineCache();
       return local;
-    }
+    };
+
+    const sb = await _waitForSB(800);
+    if (!sb || _isLocalId(res.id, 'reservation') || _isLocalId(res.clienteId, 'client')) return saveLocal();
 
     const p = {
       cliente_id: res.clienteId, quarto_id: res.quartoId, entrada: res.entrada, saida: res.saida,
@@ -323,15 +508,22 @@ const DB = {
       forma_pagamento: res.formaPagamento, status_pagamento: res.statusPagamento,
       status_reserva: res.statusReserva, origem: res.origem, observacoes: res.observacoes || '',
     };
-    if (res.id) {
-      await _sb.from('reservations').update(p).eq('id', res.id);
-      const idx = _cache.reservations.findIndex(r => r.id === res.id);
-      if (idx >= 0) _cache.reservations[idx] = { ..._cache.reservations[idx], ...res };
-      await this.refreshRoomStatuses(); return res;
-    } else {
-      const { data } = await _sb.from('reservations').insert(p).select().single();
-      const mapped = _mapReservation(data); _cache.reservations.unshift(mapped);
-      await this.refreshRoomStatuses(); return mapped;
+    try {
+      if (res.id) {
+        const { error } = await _withTimeout(sb.from('reservations').update(p).eq('id', res.id), { error: new Error('timeout') });
+        if (error) throw error;
+        const idx = _cache.reservations.findIndex(r => r.id === res.id);
+        if (idx >= 0) _cache.reservations[idx] = { ..._cache.reservations[idx], ...res };
+        await this.refreshRoomStatuses(); _saveOfflineCache(); return res;
+      } else {
+        const { data, error } = await _withTimeout(sb.from('reservations').insert(p).select().single(), { data: null, error: new Error('timeout') });
+        if (error || !data) throw error || new Error('reservation-insert-timeout');
+        const mapped = _mapReservation(data); _cache.reservations.unshift(mapped);
+        await this.refreshRoomStatuses(); _saveOfflineCache(); return mapped;
+      }
+    } catch (err) {
+      console.warn('Falha ao salvar reserva online. Salvando localmente.', err);
+      return saveLocal();
     }
   },
   /**
@@ -341,8 +533,8 @@ const DB = {
    * Substitui o antigo findOrCreateClient + saveReservation que vazava PII.
    */
   async createReservationOnline(payload) {
-    if (!_sb) {
-      // Fallback local (sem Supabase)
+    const sb = await _waitForSB();
+    const saveLocal = () => {
       const local = {
         id: _localId('reservation'),
         codigo: _reservationCode(),
@@ -353,10 +545,15 @@ const DB = {
         entrada: payload.entrada, saida: payload.saida,
         statusReserva: 'pendente',
       });
+      _saveOfflineCache();
       return { id: local.id, codigo: local.codigo };
+    };
+    if (!sb) {
+      // Fallback local (sem Supabase)
+      return saveLocal();
     }
 
-    const { data, error } = await _sb.rpc('create_reservation_online', {
+    const { data, error } = await _withTimeout(sb.rpc('create_reservation_online', {
       p_nome:         payload.nome,
       p_cpf:          payload.cpf || null,
       p_telefone:     payload.telefone,
@@ -369,11 +566,12 @@ const DB = {
       p_valor_diaria: payload.valorDiaria,
       p_valor_total:  payload.valorTotal,
       p_observacoes:  payload.observacoes || null,
-    });
+    }), { data: null, error: new Error('timeout') });
     if (error) {
       console.error('RPC create_reservation_online falhou:', error);
-      throw error;
+      return saveLocal();
     }
+    if (!data) return saveLocal();
     // Atualiza cache local (só campos seguros, pra checagem de disponibilidade)
     _cache.reservations.unshift({
       id: data?.id, quartoId: payload.quartoId,
@@ -384,23 +582,41 @@ const DB = {
   },
 
   async cancelReservation(id) {
-    await _sb.from('reservations').update({ status_reserva: 'cancelada' }).eq('id', id);
+    const sb = _getSB();
+    try {
+      if (sb && !_isLocalId(id, 'reservation')) {
+        await _withTimeout(
+          sb.from('reservations').update({ status_reserva: 'cancelada' }).eq('id', id),
+          { error: new Error('timeout') }
+        );
+      }
+    } catch (_) {}
     const r = _cache.reservations.find(x => x.id === id); if (r) r.statusReserva = 'cancelada';
     await this.refreshRoomStatuses();
+    _saveOfflineCache();
+  },
+  async forceCancelReservation(id) {
+    const r = _cache.reservations.find(x => x.id === id);
+    if (r) r.statusReserva = 'cancelada';
+    await this.refreshRoomStatuses();
+    _saveOfflineCache();
+    return r;
   },
   async deleteReservation(id) {
-    if (_sb) {
+    const sb = _getSB();
+    if (sb && !_isLocalId(id, 'reservation')) {
       // Apaga pagamentos vinculados primeiro
-      await _sb.from('payments').delete().eq('reserva_id', id);
+      await sb.from('payments').delete().eq('reserva_id', id);
       // Apaga consumos vinculados
-      await _sb.from('consumptions').delete().eq('reserva_id', id);
+      await sb.from('consumptions').delete().eq('reserva_id', id);
       // Apaga a reserva
-      await _sb.from('reservations').delete().eq('id', id);
+      await sb.from('reservations').delete().eq('id', id);
     }
     _cache.reservations = _cache.reservations.filter(r => r.id !== id);
     _cache.payments = _cache.payments.filter(p => p.reservaId !== id);
     _cache.consumptions = _cache.consumptions.filter(c => c.reservaId !== id);
     await this.refreshRoomStatuses();
+    _saveOfflineCache();
   },
   async deleteCancelledTestReservations() {
     // Apaga TODAS as reservas canceladas cujo cliente tem nome "cancelado" (case-insensitive)
@@ -416,17 +632,21 @@ const DB = {
   },
   async checkIn(id) {
     const r = _cache.reservations.find(x => x.id === id); if (!r) return;
-    await _sb.from('reservations').update({ status_reserva: 'em_hospedagem', check_in_at: new Date().toISOString() }).eq('id', id);
+    const sb = _getSB();
+    try { if (sb && !_isLocalId(id, 'reservation')) await sb.from('reservations').update({ status_reserva: 'em_hospedagem', check_in_at: new Date().toISOString() }).eq('id', id); } catch (_) {}
     r.statusReserva = 'em_hospedagem';
-    await _sb.from('rooms').update({ status: 'ocupado', updated_at: new Date().toISOString() }).eq('id', r.quartoId);
+    try { if (sb) await sb.from('rooms').update({ status: 'ocupado', updated_at: new Date().toISOString() }).eq('id', r.quartoId); } catch (_) {}
     const q = _cache.rooms.find(x => x.id === r.quartoId); if (q) q.status = 'ocupado';
+    _saveOfflineCache();
   },
   async checkOut(id) {
     const r = _cache.reservations.find(x => x.id === id); if (!r) return;
-    await _sb.from('reservations').update({ status_reserva: 'finalizada', check_out_at: new Date().toISOString() }).eq('id', id);
+    const sb = _getSB();
+    try { if (sb && !_isLocalId(id, 'reservation')) await sb.from('reservations').update({ status_reserva: 'finalizada', check_out_at: new Date().toISOString() }).eq('id', id); } catch (_) {}
     r.statusReserva = 'finalizada';
-    await _sb.from('rooms').update({ status: 'limpeza', updated_at: new Date().toISOString() }).eq('id', r.quartoId);
+    try { if (sb) await sb.from('rooms').update({ status: 'limpeza', updated_at: new Date().toISOString() }).eq('id', r.quartoId); } catch (_) {}
     const q = _cache.rooms.find(x => x.id === r.quartoId); if (q) q.status = 'limpeza';
+    _saveOfflineCache();
   },
   async refreshRoomStatuses() {
     const today = new Date().toISOString().slice(0, 10);
@@ -443,20 +663,37 @@ const DB = {
   /* ===== Consumo ===== */
   consumptions(reservaId = null) { const a = _cache.consumptions; return reservaId ? a.filter(c => c.reservaId === reservaId) : a; },
   async addConsumption(c) {
+    const saveLocal = () => {
+      const m = { ...c, id: c.id || _localId('consumption'), dataHora: c.dataHora || new Date().toISOString() };
+      _cache.consumptions.unshift(m);
+      _saveOfflineCache();
+      return m;
+    };
+    const sb = await _waitForSB(800);
+    if (!sb || _isLocalId(c.reservaId, 'reservation')) return saveLocal();
     const p = { reserva_id: c.reservaId, produto: c.produto, qtd: c.qtd, valor_unit: c.valorUnit, valor_total: c.valorTotal, funcionario_id: c.funcionarioId || null, data_hora: c.dataHora || new Date().toISOString() };
-    const { data } = await _sb.from('consumptions').insert(p).select().single();
-    const m = _mapConsumption(data); _cache.consumptions.unshift(m); return m;
+    try {
+      const { data, error } = await _withTimeout(sb.from('consumptions').insert(p).select().single(), { data: null, error: new Error('timeout') });
+      if (error || !data) throw error || new Error('consumption-insert-timeout');
+      const m = _mapConsumption(data); _cache.consumptions.unshift(m); _saveOfflineCache(); return m;
+    } catch (err) {
+      console.warn('Falha ao salvar consumo online. Salvando localmente.', err);
+      return saveLocal();
+    }
   },
 
   /* ===== Pagamentos ===== */
   payments(reservaId = null) { const a = _cache.payments; return reservaId ? a.filter(p => p.reservaId === reservaId) : a; },
   async updateReservationPaymentFields(r) {
     try {
-      await _sb.from('reservations').update({ valor_pago: r.valorPago, valor_restante: r.valorRestante, status_pagamento: r.statusPagamento }).eq('id', r.id);
+      const sb = _getSB();
+      if (sb && !_isLocalId(r.id, 'reservation')) await sb.from('reservations').update({ valor_pago: r.valorPago, valor_restante: r.valorRestante, status_pagamento: r.statusPagamento }).eq('id', r.id);
+      _saveOfflineCache();
     } catch(e) { console.warn('Erro ao corrigir valorPago:', e); }
   },
   async deletePayment(pagamentoId, reservaId) {
-    await _sb.from('payments').delete().eq('id', pagamentoId);
+    const sb = _getSB();
+    try { if (sb && !_isLocalId(pagamentoId, 'payment')) await sb.from('payments').delete().eq('id', pagamentoId); } catch (_) {}
     _cache.payments = _cache.payments.filter(p => p.id !== pagamentoId);
     const r = _cache.reservations.find(x => x.id === reservaId);
     if (r) {
@@ -465,21 +702,78 @@ const DB = {
       r.valorRestante = Math.max(0, r.valorTotal - totalPago);
       r.statusPagamento = totalPago >= r.valorTotal ? 'pago' : totalPago > 0 ? 'parcial' : 'pendente';
       r.statusReserva = totalPago >= r.valorTotal ? 'confirmada' : 'pendente';
-      await _sb.from('reservations').update({ valor_pago: r.valorPago, valor_restante: r.valorRestante, status_pagamento: r.statusPagamento, status_reserva: r.statusReserva }).eq('id', reservaId);
+      try { if (sb && !_isLocalId(reservaId, 'reservation')) await sb.from('reservations').update({ valor_pago: r.valorPago, valor_restante: r.valorRestante, status_pagamento: r.statusPagamento, status_reserva: r.statusReserva }).eq('id', reservaId); } catch (_) {}
     }
+    _saveOfflineCache();
   },
   async addPayment(p) {
+    const saveLocal = () => {
+      const m = { ...p, id: p.id || _localId('payment'), data: p.data || new Date().toISOString() };
+      _cache.payments.unshift(m);
+      const r = _cache.reservations.find(x => x.id === p.reservaId);
+      if (r) {
+        r.valorPago = (r.valorPago || 0) + p.valor;
+        r.valorRestante = Math.max(0, r.valorTotal - r.valorPago);
+        r.statusPagamento = r.valorRestante === 0 ? 'pago' : (r.valorPago > 0 ? 'parcial' : 'pendente');
+        r.statusReserva = r.valorRestante === 0 ? 'confirmada' : r.statusReserva;
+      }
+      _saveOfflineCache();
+      return m;
+    };
+    const sb = await _waitForSB(800);
+    if (!sb || _isLocalId(p.reservaId, 'reservation')) return saveLocal();
+
     const payload = { reserva_id: p.reservaId, valor: p.valor, forma: p.forma, data: p.data || new Date().toISOString() };
-    const { data } = await _sb.from('payments').insert(payload).select().single();
-    const m = _mapPayment(data); _cache.payments.unshift(m);
+    try {
+      const { data, error } = await _withTimeout(sb.from('payments').insert(payload).select().single(), { data: null, error: new Error('timeout') });
+      if (error || !data) throw error || new Error('payment-insert-timeout');
+      const m = _mapPayment(data); _cache.payments.unshift(m);
         const r = _cache.reservations.find(x => x.id === p.reservaId);
-    if (r) {
-      r.valorPago = (r.valorPago || 0) + p.valor;
-      r.valorRestante = Math.max(0, r.valorTotal - r.valorPago);
-      r.statusPagamento = r.valorRestante === 0 ? 'pago' : (r.valorPago > 0 ? 'parcial' : 'pendente');
-      await _sb.from('reservations').update({ valor_pago: r.valorPago, valor_restante: r.valorRestante, status_pagamento: r.statusPagamento }).eq('id', p.reservaId);
+      if (r) {
+        r.valorPago = (r.valorPago || 0) + p.valor;
+        r.valorRestante = Math.max(0, r.valorTotal - r.valorPago);
+        r.statusPagamento = r.valorRestante === 0 ? 'pago' : (r.valorPago > 0 ? 'parcial' : 'pendente');
+        r.statusReserva = r.valorRestante === 0 ? 'confirmada' : r.statusReserva;
+        await _withTimeout(
+          sb.from('reservations').update({
+            valor_pago: r.valorPago,
+            valor_restante: r.valorRestante,
+            status_pagamento: r.statusPagamento,
+            status_reserva: r.statusReserva,
+          }).eq('id', p.reservaId),
+          { error: new Error('timeout') }
+        );
+      }
+      _saveOfflineCache();
+      return m;
+    } catch (err) {
+      console.warn('Falha ao salvar pagamento online. Salvando localmente.', err);
+      return saveLocal();
     }
-    return m;
+  },
+
+  async forceConfirmPayment(reservaId, valor, forma = 'whatsapp') {
+    const r = _cache.reservations.find(x => x.id === reservaId);
+    if (!r) return null;
+    const amount = Number(valor) || Math.max(0, (r.valorTotal || 0) - (r.valorPago || 0));
+    if (amount > 0) {
+      _cache.payments.unshift({
+        id: _localId('payment'),
+        reservaId,
+        valor: amount,
+        forma,
+        data: new Date().toISOString(),
+      });
+    }
+    const totalPago = _cache.payments
+      .filter(p => p.reservaId === reservaId)
+      .reduce((s, p) => s + (Number(p.valor) || 0), 0);
+    r.valorPago = totalPago;
+    r.valorRestante = Math.max(0, (r.valorTotal || 0) - totalPago);
+    r.statusPagamento = r.valorRestante === 0 ? 'pago' : (r.valorPago > 0 ? 'parcial' : 'pendente');
+    if (r.valorRestante === 0) r.statusReserva = 'confirmada';
+    _saveOfflineCache();
+    return r;
   },
 
   /* ===== Profiles ===== */
@@ -494,9 +788,4 @@ const DB = {
 };
 
 window.DB = DB;
-window._sb = _sb;
-; },
-};
-
-window.DB = DB;
-window._sb = _sb;
+window._getSB = _getSB;
