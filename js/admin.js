@@ -1024,6 +1024,12 @@ const App = {
       this.toast('Quarto ocupado nesse período. Verifique outras reservas.', 'error');
       return;
     }
+    // Desabilita o botão para evitar cliques duplos durante o salvamento
+    const btnConfirmar = document.querySelector('#modalFoot .btn-primary');
+    if (btnConfirmar) {
+      btnConfirmar.disabled = true;
+      btnConfirmar.textContent = '⏳ Salvando...';
+    }
     try {
       await DB.saveReservation({
         ...r,
@@ -1041,6 +1047,11 @@ const App = {
     } catch(err) {
       console.error(err);
       this.toast('Erro ao prorrogar reserva.', 'error');
+      // Reabilita o botão em caso de erro para o usuário tentar novamente
+      if (btnConfirmar) {
+        btnConfirmar.disabled = false;
+        btnConfirmar.innerHTML = '&#10003; Confirmar prorrogação';
+      }
     }
   },
 
