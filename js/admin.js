@@ -216,6 +216,24 @@ const App = {
     document.getElementById('modal').classList.remove('open');
   },
 
+  /* ── Trava/destrava botão primário do modal durante operações async ── */
+  _lockBtn(label = '⏳ Salvando...') {
+    const btn = document.querySelector('#modalFoot .btn-primary');
+    if (btn && !btn.disabled) {
+      btn._origLabel = btn.innerHTML;
+      btn.disabled = true;
+      btn.textContent = label;
+      return btn;
+    }
+    return null;
+  },
+  _unlockBtn(btn) {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = btn._origLabel || 'Salvar';
+    }
+  },
+
   /* ============================================================
      INÍCIO — KPIs e visão geral
      ============================================================ */
@@ -434,12 +452,19 @@ const App = {
   },
 
   async saveRoomStatus(id) {
+    const btn = this._lockBtn();
     const status = document.getElementById('newStatus').value;
-    await DB.setRoomStatus(id, status);
-    this.toast('Status atualizado.');
-    this.closeModal();
-    if (this.view === 'mapa') this.view_mapa();
-    if (this.view === 'quartos') this.view_quartos();
+    try {
+      await DB.setRoomStatus(id, status);
+      this.toast('Status atualizado.');
+      this.closeModal();
+      if (this.view === 'mapa') this.view_mapa();
+      if (this.view === 'quartos') this.view_quartos();
+    } catch(e) {
+      console.error(e);
+      this.toast('Erro ao salvar status.', 'error');
+      this._unlockBtn(btn);
+    }
   },
 
   /* ============================================================
@@ -610,33 +635,40 @@ const App = {
     if (diarias < 1) return this.toast('Datas inválidas.', 'error');
     if (!DB.isRoomAvailable(quartoId, entrada, saida)) return this.toast('Quarto indisponível neste período.', 'error');
 
-    let clienteId = cliSel;
-    if (cliSel === '__new') {
-      const nome = document.getElementById('ncNome').value.trim();
-      const cpf = document.getElementById('ncCpf').value.trim();
-      const tel = document.getElementById('ncTel').value.trim();
-      const email = document.getElementById('ncEmail').value.trim();
-      if (!nome || !cpf) return this.toast('Preencha os dados do novo cliente.', 'error');
-      const c = await DB.findOrCreateClient({ nome, cpf, telefone: tel, email });
-      clienteId = c.id;
+    const btn = this._lockBtn('⏳ Salvando...');
+    try {
+      let clienteId = cliSel;
+      if (cliSel === '__new') {
+        const nome = document.getElementById('ncNome').value.trim();
+        const cpf = document.getElementById('ncCpf').value.trim();
+        const tel = document.getElementById('ncTel').value.trim();
+        const email = document.getElementById('ncEmail').value.trim();
+        if (!nome || !cpf) { this.toast('Preencha os dados do novo cliente.', 'error'); this._unlockBtn(btn); return; }
+        const c = await DB.findOrCreateClient({ nome, cpf, telefone: tel, email });
+        clienteId = c.id;
+      }
+
+      const room = DB.room(quartoId);
+      const daily = this.getDailyRate(room, hospedes);
+      const total = daily * diarias;
+      const r = await DB.saveReservation({
+        clienteId, quartoId, entrada, saida, diarias, hospedes,
+        valorDiaria: daily, valorTotal: total, valorPago: 0, valorRestante: total,
+        formaPagamento: forma,
+        statusPagamento: 'pendente',
+        statusReserva: 'pendente',
+        origem: 'manual', observacoes: obs,
+      });
+      if (pago > 0) await DB.addPayment({ reservaId: r.id, valor: pago, forma });
+
+      this.closeModal();
+      this.toast('Reserva criada com sucesso!');
+      this.view_reservas();
+    } catch(e) {
+      console.error(e);
+      this.toast('Erro ao criar reserva.', 'error');
+      this._unlockBtn(btn);
     }
-
-    const room = DB.room(quartoId);
-    const daily = this.getDailyRate(room, hospedes);
-    const total = daily * diarias;
-    const r = await DB.saveReservation({
-      clienteId, quartoId, entrada, saida, diarias, hospedes,
-      valorDiaria: daily, valorTotal: total, valorPago: 0, valorRestante: total,
-      formaPagamento: forma,
-      statusPagamento: 'pendente',
-      statusReserva: 'pendente',
-      origem: 'manual', observacoes: obs,
-    });
-    if (pago > 0) await DB.addPayment({ reservaId: r.id, valor: pago, forma });
-
-    this.closeModal();
-    this.toast('Reserva criada com sucesso!');
-    this.view_reservas();
   },
 
   openReservaDetail(reservaId) {
@@ -754,25 +786,31 @@ const App = {
   async gerarComprovante(reservaId) {
     const r = DB.reservation(reservaId);
     if (!r) return;
-    const novaForma = document.getElementById('pdfForma')?.value;
-    // Se mudou a forma, salva no banco antes de gerar o PDF
-    if (novaForma && novaForma !== r.formaPagamento) {
-      await DB.saveReservation({ ...r, formaPagamento: novaForma });
-      // Atualiza também os pagamentos registrados para refletir na nota
-      const pgs = DB.payments(reservaId);
-      for (const p of pgs) {
-        if (p.forma !== novaForma) {
-          await _sb.from('payments').update({ forma: novaForma }).eq('id', p.id);
-          p.forma = novaForma;
+    const btn = this._lockBtn('⏳ Gerando...');
+    try {
+      const novaForma = document.getElementById('pdfForma')?.value;
+      if (novaForma && novaForma !== r.formaPagamento) {
+        await DB.saveReservation({ ...r, formaPagamento: novaForma });
+        const pgs = DB.payments(reservaId);
+        for (const p of pgs) {
+          if (p.forma !== novaForma) {
+            await _sb.from('payments').update({ forma: novaForma }).eq('id', p.id);
+            p.forma = novaForma;
+          }
         }
       }
+      this.closeModal();
+      PDF.comprovante(reservaId);
+    } catch(e) {
+      console.error(e);
+      this.toast('Erro ao gerar comprovante.', 'error');
+      this._unlockBtn(btn);
     }
-    this.closeModal();
-    PDF.comprovante(reservaId);
   },
 
   /* ===== Confirmar Pagamento (reserva online via WhatsApp) ===== */
   async confirmPayment(reservaId) {
+    if (this._confirmingPayment) return;
     const r = DB.reservation(reservaId);
     if (!r) return;
     const cli = DB.client(r.clienteId);
@@ -780,16 +818,22 @@ const App = {
     const pgs = DB.payments(reservaId);
     const valorPagoReal = pgs.reduce((s, p) => s + p.valor, 0);
     const restante = Math.max(0, r.valorTotal - valorPagoReal);
+    const btn = this._lockBtn('⏳ Confirmando...');
 
     if (restante <= 0) {
-      await DB.saveReservation({ ...r, statusReserva: 'confirmada', statusPagamento: 'pago', valorPago: valorPagoReal, valorRestante: 0 });
-      this.toast('Reserva ja esta paga. Status confirmado.');
-      this.closeModal();
-      this._refreshView();
+      try {
+        await DB.saveReservation({ ...r, statusReserva: 'confirmada', statusPagamento: 'pago', valorPago: valorPagoReal, valorRestante: 0 });
+        this.toast('Reserva ja esta paga. Status confirmado.');
+        this.closeModal();
+        this._refreshView();
+      } catch(e) { console.error(e); this._unlockBtn(btn); }
       return;
     }
 
+    this._unlockBtn(btn); // desbloqueia antes do confirm() nativo
     if (!confirm(`Confirmar pagamento da reserva ${r.codigo} de ${nomeCliente}?\nValor restante: ${DB.formatBRL(restante)}\n\nEsta ação irá lançar apenas o saldo restante e alterar o status para "Pagamento confirmado".`)) return;
+    this._confirmingPayment = true;
+    const btn2 = this._lockBtn('⏳ Confirmando...');
     try {
       await DB.addPayment({ reservaId, valor: restante, forma: r.formaPagamento || 'whatsapp' });
       const atualizada = DB.reservation(reservaId);
@@ -811,6 +855,9 @@ const App = {
       this.toast('Pagamento confirmado localmente. Atualize depois com internet.');
       this.closeModal();
       this._refreshView();
+    } finally {
+      this._confirmingPayment = false;
+      this._unlockBtn(btn2);
     }
   },
 
@@ -846,17 +893,24 @@ const App = {
   },
 
   async confirmCheckIn(id) {
-    const hora = document.getElementById('ciHora')?.value || '';
-    const hospedes = parseInt(document.getElementById('ciHospedes')?.value) || 1;
-    const obs = document.getElementById('ciObs')?.value?.trim() || '';
-    const r = DB.reservation(id);
-    const obsAtual = r.observacoes || '';
-    const novaObs = [obsAtual, obs ? 'Check-in ' + hora + ': ' + obs : 'Check-in: ' + hora].filter(Boolean).join(' | ');
-    await DB.saveReservation({ ...r, hospedes, observacoes: novaObs });
-    await DB.checkIn(id);
-    this.toast('Check-in realizado!');
-    this.closeModal();
-    this._refreshView();
+    const btn = this._lockBtn('⏳ Salvando...');
+    try {
+      const hora = document.getElementById('ciHora')?.value || '';
+      const hospedes = parseInt(document.getElementById('ciHospedes')?.value) || 1;
+      const obs = document.getElementById('ciObs')?.value?.trim() || '';
+      const r = DB.reservation(id);
+      const obsAtual = r.observacoes || '';
+      const novaObs = [obsAtual, obs ? 'Check-in ' + hora + ': ' + obs : 'Check-in: ' + hora].filter(Boolean).join(' | ');
+      await DB.saveReservation({ ...r, hospedes, observacoes: novaObs });
+      await DB.checkIn(id);
+      this.toast('Check-in realizado!');
+      this.closeModal();
+      this._refreshView();
+    } catch(e) {
+      console.error(e);
+      this.toast('Erro ao realizar check-in.', 'error');
+      this._unlockBtn(btn);
+    }
   },
 
   /* ── CHECK-OUT modal ── */
@@ -903,19 +957,26 @@ const App = {
   },
 
   async confirmCheckOut(id) {
-    const hora = document.getElementById('coHora')?.value || '';
-    const statusQuarto = document.getElementById('coStatus')?.value || 'limpeza';
-    const obs = document.getElementById('coObs')?.value?.trim() || '';
-    const r = DB.reservation(id);
-    const obsAtual = r.observacoes || '';
-    const novaObs = [obsAtual, obs ? 'Check-out ' + hora + ': ' + obs : 'Check-out: ' + hora].filter(Boolean).join(' | ');
-    await DB.saveReservation({ ...r, observacoes: novaObs });
-    await DB.checkOut(id);
-    await DB.setRoomStatus(r.quartoId, statusQuarto);
-    this.toast('Check-out realizado!');
-    this.closeModal();
-    setTimeout(() => PDF.comprovante(id), 200);
-    this._refreshView();
+    const btn = this._lockBtn('⏳ Salvando...');
+    try {
+      const hora = document.getElementById('coHora')?.value || '';
+      const statusQuarto = document.getElementById('coStatus')?.value || 'limpeza';
+      const obs = document.getElementById('coObs')?.value?.trim() || '';
+      const r = DB.reservation(id);
+      const obsAtual = r.observacoes || '';
+      const novaObs = [obsAtual, obs ? 'Check-out ' + hora + ': ' + obs : 'Check-out: ' + hora].filter(Boolean).join(' | ');
+      await DB.saveReservation({ ...r, observacoes: novaObs });
+      await DB.checkOut(id);
+      await DB.setRoomStatus(r.quartoId, statusQuarto);
+      this.toast('Check-out realizado!');
+      this.closeModal();
+      setTimeout(() => PDF.comprovante(id), 200);
+      this._refreshView();
+    } catch(e) {
+      console.error(e);
+      this.toast('Erro ao realizar check-out.', 'error');
+      this._unlockBtn(btn);
+    }
   },
 
   _refreshView() {
@@ -1329,13 +1390,20 @@ const App = {
     const qtd = parseInt(document.getElementById('csQtd').value) || 0;
     const vu = parseFloat(document.getElementById('csVu').value) || 0;
     if (!produto || qtd < 1 || vu <= 0) return this.toast('Preencha todos os campos.', 'error');
-    await DB.addConsumption({
-      reservaId, produto, qtd, valorUnit: vu, valorTotal: qtd * vu,
-      funcionarioId: this.user.id,
-    });
-    this.toast('Consumo lançado!');
-    this.closeModal();
-    if (this.view === 'consumo') this.view_consumo();
+    const btn = this._lockBtn('⏳ Salvando...');
+    try {
+      await DB.addConsumption({
+        reservaId, produto, qtd, valorUnit: vu, valorTotal: qtd * vu,
+        funcionarioId: this.user.id,
+      });
+      this.toast('Consumo lançado!');
+      this.closeModal();
+      if (this.view === 'consumo') this.view_consumo();
+    } catch(e) {
+      console.error(e);
+      this.toast('Erro ao lançar consumo.', 'error');
+      this._unlockBtn(btn);
+    }
   },
 
   /* ============================================================
@@ -1427,10 +1495,17 @@ const App = {
       amenities: document.getElementById('qAmen').value.split(',').map(s => s.trim()).filter(Boolean),
     };
     if (!data.numero) return this.toast('Número obrigatório.', 'error');
-    await DB.saveRoom(data);
-    this.closeModal();
-    this.toast('Quarto salvo.');
-    this.view_quartos();
+    const btn = this._lockBtn();
+    try {
+      await DB.saveRoom(data);
+      this.closeModal();
+      this.toast('Quarto salvo.');
+      this.view_quartos();
+    } catch(e) {
+      console.error(e);
+      this.toast('Erro ao salvar quarto.', 'error');
+      this._unlockBtn(btn);
+    }
   },
 
   async deleteRoom(id) {
@@ -1500,10 +1575,17 @@ const App = {
       email: document.getElementById('cEmail').value.trim(),
     };
     if (!data.nome || !data.cpf) return this.toast('Nome e CPF obrigatórios.', 'error');
-    await DB.saveClient(data);
-    this.closeModal();
-    this.toast('Cliente salvo.');
-    this.view_clientes();
+    const btn = this._lockBtn();
+    try {
+      await DB.saveClient(data);
+      this.closeModal();
+      this.toast('Cliente salvo.');
+      this.view_clientes();
+    } catch(e) {
+      console.error(e);
+      this.toast('Erro ao salvar cliente.', 'error');
+      this._unlockBtn(btn);
+    }
   },
 
   /* ============================================================
@@ -1608,26 +1690,25 @@ const App = {
   },
 
   async savePagamento(reservaId) {
-    if (this._savingPagamento) return;
-    this._savingPagamento = true;
-    const btn = document.querySelector('#modalFoot .btn-primary');
-    if (btn) { btn.disabled = true; btn.textContent = 'Salvando...'; }
+    const valor = parseFloat(document.getElementById('pgValor').value);
+    const forma = document.getElementById('pgForma').value;
+    if (!valor || valor <= 0) return this.toast('Valor inválido.', 'error');
+    const r = DB.reservation(reservaId);
+    const totalPago = DB.payments(reservaId).reduce((s, p) => s + p.valor, 0);
+    const restante = Math.max(0, (r?.valorTotal || 0) - totalPago);
+    if (restante <= 0) return this.toast('Esta reserva ja esta paga.', 'error');
+    if (valor > restante + 0.01 && !confirm(`O valor informado (${DB.formatBRL(valor)}) e maior que o restante (${DB.formatBRL(restante)}). Confirmar mesmo assim?`)) return;
+    const btn = this._lockBtn();
     try {
-      const valor = parseFloat(document.getElementById('pgValor').value);
-      const forma = document.getElementById('pgForma').value;
-      if (!valor || valor <= 0) { this.toast('Valor inválido.', 'error'); return; }
-      const r = DB.reservation(reservaId);
-      const totalPago = DB.payments(reservaId).reduce((s, p) => s + p.valor, 0);
-      const restante = Math.max(0, (r?.valorTotal || 0) - totalPago);
-      if (restante <= 0) { this.toast('Esta reserva ja esta paga.', 'error'); return; }
-      if (valor > restante + 0.01 && !confirm(`O valor informado (${DB.formatBRL(valor)}) e maior que o restante (${DB.formatBRL(restante)}). Confirmar mesmo assim?`)) return;
       await DB.addPayment({ reservaId, valor, forma });
       this.toast('Pagamento lançado!');
       this.closeModal();
       if (this.view === 'pagamentos') this.view_pagamentos();
       else if (this.view === 'reservas') this.view_reservas();
-    } finally {
-      this._savingPagamento = false;
+    } catch(e) {
+      console.error(e);
+      this.toast('Erro ao lançar pagamento.', 'error');
+      this._unlockBtn(btn);
     }
   },
 
