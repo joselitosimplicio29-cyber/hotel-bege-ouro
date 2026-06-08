@@ -3,8 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-  <link rel="apple-touch-icon" href="/favicon.svg">
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="apple-touch-icon" href="../favicon.svg">
+  <link rel="manifest" href="../manifest.json">
+  <meta name="theme-color" content="#C9A961">
   <title>Acesso restrito — Hotel Bege Ouro</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
@@ -20,6 +22,11 @@
     <p class="sub">Acesso à dashboard</p>
 
     <div class="err" id="errBox"></div>
+    <div class="login-hint" id="offlineBox" style="display:none; margin:0 0 16px; padding:12px; text-align:left; border:1px solid var(--cinza-borda);">
+      <strong>Cache offline encontrado</strong>
+      <span id="offlineUserText" style="display:block; color:var(--cinza-texto); margin-bottom:10px;"></span>
+      <button type="button" class="btn btn-outline btn-block" id="offlineBtn">Abrir painel offline</button>
+    </div>
 
     <form id="loginForm">
       <label class="field">E-mail</label>
@@ -33,22 +40,65 @@
   </div>
 </div>
 
-<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script src="../js/supabase.min.js?v=1"></script>
 <script src="../js/supabase-config.js?v=2"></script>
-<script src="../js/db.js?v=4"></script>
+<script src="../js/db.js?v=15"></script>
+<script src="../js/pwa.js?v=1"></script>
 <script>
+  function showError(message) {
+    const err = document.getElementById('errBox');
+    err.textContent = message;
+    err.style.display = 'block';
+  }
+
+  function updateOfflineBox() {
+    const cached = DB.offlineUser?.();
+    const box = document.getElementById('offlineBox');
+    const txt = document.getElementById('offlineUserText');
+    if (!cached || !box || !txt) return;
+    box.style.display = 'block';
+    txt.textContent = `Disponivel para ${cached.email || cached.nome || 'usuario salvo'}.`;
+    const email = document.getElementById('email');
+    if (email && !email.value && cached.email) email.value = cached.email;
+  }
+
+  (async () => {
+    try {
+      const user = await DB.currentUser();
+      if (user) location.href = 'dashboard.html';
+    } catch (_) {}
+    updateOfflineBox();
+  })();
+
+  document.getElementById('offlineBtn').addEventListener('click', () => {
+    const email = document.getElementById('email').value.trim();
+    const user = DB.offlineUser?.(email) || DB.offlineUser?.();
+    if (!user) {
+      showError('Ainda nao existe cache offline nesse PC. Entre uma vez com internet.');
+      return;
+    }
+    location.href = 'dashboard.html';
+  });
+
   document.getElementById('loginForm').addEventListener('submit', async e => {
     e.preventDefault();
     const btn = e.target.querySelector('button');
+    const err = document.getElementById('errBox');
+    err.style.display = 'none';
     btn.textContent = 'Entrando...';
     btn.disabled = true;
     const email = document.getElementById('email').value.trim();
     const senha = document.getElementById('senha').value;
-    const user = await DB.login(email, senha);
-    const err = document.getElementById('errBox');
+    let user = null;
+    try {
+      user = await DB.login(email, senha);
+    } catch (err) {
+      console.error('Falha no login:', err);
+      user = null;
+    }
     if (!user) {
-      err.textContent = 'E-mail ou senha incorretos.';
-      err.style.display = 'block';
+      showError('Nao foi possivel entrar. Confira e-mail, senha e conexao. Se ja entrou antes nesse PC, use "Abrir painel offline".');
+      updateOfflineBox();
       btn.textContent = 'Entrar';
       btn.disabled = false;
       return;

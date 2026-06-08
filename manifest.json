@@ -1,0 +1,25 @@
+{
+  "name": "Hotel OuroBege",
+  "short_name": "OuroBege",
+  "description": "Sistema do Hotel OuroBege com suporte offline.",
+  "start_url": "/admin/dashboard.html",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#F5EFE6",
+  "theme_color": "#C9A961",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/img/icone.png",
+      "sizes": "any",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

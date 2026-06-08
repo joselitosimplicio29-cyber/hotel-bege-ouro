@@ -5,8 +5,10 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-  <link rel="apple-touch-icon" href="/favicon.svg">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="apple-touch-icon" href="favicon.svg">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#C9A961">
   <title>Contato — Hotel Bege Ouro</title>
   <meta name="description" content="Entre em contato com o Hotel Bege Ouro. Recepção 24h, WhatsApp, e-mail e formulário online.">
   <meta property="og:title" content="Contato — Hotel Bege Ouro">
@@ -215,10 +217,11 @@
   </div>
 </section>
 
-<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script src="js/supabase.min.js?v=1"></script>
 <script src="js/supabase-config.js"></script>
-<script src="js/db.js?v=4"></script>
+<script src="js/db.js?v=15"></script>
 <script src="js/site.js?v=18"></script>
+<script src="js/pwa.js?v=1"></script>
 <script>
   SITE.init('contato');
   document.getElementById('contatoForm').addEventListener('submit', e => {
