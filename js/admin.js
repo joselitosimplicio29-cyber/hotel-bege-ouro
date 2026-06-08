@@ -203,7 +203,17 @@ const App = {
     t.textContent = msg;
     t.classList.add('show');
     clearTimeout(this._tt);
-    this._tt = setTimeout(() => t.classList.remove('show'), 3200);
+    const dur = type === 'warning' ? 6000 : 3200;
+    this._tt = setTimeout(() => t.classList.remove('show'), dur);
+  },
+
+  /* Exibe aviso se o save caiu em fallback local (sem internet) */
+  _checkLocalFallback(result, successMsg) {
+    if (result?._savedLocallyOnly) {
+      this.toast('⚠️ Internet lenta — salvo localmente. Não feche o navegador antes de reconectar.', 'warning');
+    } else {
+      this.toast(successMsg);
+    }
   },
 
   openModal(title, body, foot = '') {
@@ -662,7 +672,7 @@ const App = {
       if (pago > 0) await DB.addPayment({ reservaId: r.id, valor: pago, forma });
 
       this.closeModal();
-      this.toast('Reserva criada com sucesso!');
+      this._checkLocalFallback(r, 'Reserva criada com sucesso!');
       this.view_reservas();
     } catch(e) {
       console.error(e);
@@ -1092,7 +1102,7 @@ const App = {
       btnConfirmar.textContent = '⏳ Salvando...';
     }
     try {
-      await DB.saveReservation({
+      const saved = await DB.saveReservation({
         ...r,
         saida: novaSaida,
         diarias: novasDiarias,
@@ -1102,7 +1112,7 @@ const App = {
         statusReserva: r.statusReserva === 'finalizada' ? 'em_hospedagem' : r.statusReserva,
         observacoes: (r.observacoes ? r.observacoes + ' | ' : '') + `Prorrogada +${diasExtras}d em ${new Date().toLocaleDateString('pt-BR')}`,
       });
-      this.toast(`Reserva prorrogada por +${diasExtras} dia(s)! Extra: ${DB.formatBRL(valorExtra)}`);
+      this._checkLocalFallback(saved, `Reserva prorrogada por +${diasExtras} dia(s)! Extra: ${DB.formatBRL(valorExtra)}`);
       this.closeModal();
       this._refreshView();
     } catch(err) {

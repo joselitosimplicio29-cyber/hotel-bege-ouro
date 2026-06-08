@@ -38,7 +38,7 @@ async function _waitForSB(timeout = 2500) {
   return _getSB();
 }
 
-const REMOTE_TIMEOUT_MS = 2500;
+const REMOTE_TIMEOUT_MS = 12000; // 12s — evita salvar só localmente em rede lenta
 const OFFLINE_CACHE_KEY = 'hotel_ourobege_admin_cache_v1';
 const OFFLINE_USER_KEY = 'hotel_ourobege_admin_user_v1';
 
@@ -523,7 +523,9 @@ const DB = {
       }
     } catch (err) {
       console.warn('Falha ao salvar reserva online. Salvando localmente.', err);
-      return saveLocal();
+      const saved = await saveLocal();
+      saved._savedLocallyOnly = true; // sinaliza fallback para o chamador exibir aviso
+      return saved;
     }
   },
   /**
@@ -632,19 +634,43 @@ const DB = {
   },
   async checkIn(id) {
     const r = _cache.reservations.find(x => x.id === id); if (!r) return;
-    const sb = _getSB();
-    try { if (sb && !_isLocalId(id, 'reservation')) await sb.from('reservations').update({ status_reserva: 'em_hospedagem', check_in_at: new Date().toISOString() }).eq('id', id); } catch (_) {}
+    const sb = await _waitForSB(800);
+    if (sb && !_isLocalId(id, 'reservation')) {
+      const { error } = await _withTimeout(
+        sb.from('reservations').update({ status_reserva: 'em_hospedagem', check_in_at: new Date().toISOString() }).eq('id', id),
+        { error: new Error('timeout') }
+      );
+      if (error) console.warn('checkIn: falha ao atualizar Supabase', error);
+    }
     r.statusReserva = 'em_hospedagem';
-    try { if (sb) await sb.from('rooms').update({ status: 'ocupado', updated_at: new Date().toISOString() }).eq('id', r.quartoId); } catch (_) {}
+    if (sb) {
+      const { error } = await _withTimeout(
+        sb.from('rooms').update({ status: 'ocupado', updated_at: new Date().toISOString() }).eq('id', r.quartoId),
+        { error: new Error('timeout') }
+      );
+      if (error) console.warn('checkIn: falha ao atualizar quarto', error);
+    }
     const q = _cache.rooms.find(x => x.id === r.quartoId); if (q) q.status = 'ocupado';
     _saveOfflineCache();
   },
   async checkOut(id) {
     const r = _cache.reservations.find(x => x.id === id); if (!r) return;
-    const sb = _getSB();
-    try { if (sb && !_isLocalId(id, 'reservation')) await sb.from('reservations').update({ status_reserva: 'finalizada', check_out_at: new Date().toISOString() }).eq('id', id); } catch (_) {}
+    const sb = await _waitForSB(800);
+    if (sb && !_isLocalId(id, 'reservation')) {
+      const { error } = await _withTimeout(
+        sb.from('reservations').update({ status_reserva: 'finalizada', check_out_at: new Date().toISOString() }).eq('id', id),
+        { error: new Error('timeout') }
+      );
+      if (error) console.warn('checkOut: falha ao atualizar Supabase', error);
+    }
     r.statusReserva = 'finalizada';
-    try { if (sb) await sb.from('rooms').update({ status: 'limpeza', updated_at: new Date().toISOString() }).eq('id', r.quartoId); } catch (_) {}
+    if (sb) {
+      const { error } = await _withTimeout(
+        sb.from('rooms').update({ status: 'limpeza', updated_at: new Date().toISOString() }).eq('id', r.quartoId),
+        { error: new Error('timeout') }
+      );
+      if (error) console.warn('checkOut: falha ao atualizar quarto', error);
+    }
     const q = _cache.rooms.find(x => x.id === r.quartoId); if (q) q.status = 'limpeza';
     _saveOfflineCache();
   },
