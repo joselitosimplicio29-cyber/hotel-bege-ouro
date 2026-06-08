@@ -41,6 +41,25 @@ async function _waitForSB(timeout = 2500) {
 const REMOTE_TIMEOUT_MS = 12000; // 12s — evita salvar só localmente em rede lenta
 const OFFLINE_CACHE_KEY = 'hotel_ourobege_admin_cache_v1';
 const OFFLINE_USER_KEY = 'hotel_ourobege_admin_user_v1';
+const ROOM_STATUS_KEY  = 'hotel_ourobege_room_status_v1';
+
+/* Persiste status manualmente definidos dos quartos no localStorage */
+function _saveRoomStatuses() {
+  try {
+    const statuses = {};
+    for (const r of _cache.rooms) {
+      if (r.status !== 'disponivel') statuses[r.id] = r.status;
+    }
+    localStorage.setItem(ROOM_STATUS_KEY, JSON.stringify(statuses));
+  } catch (_) {}
+}
+
+/* Restaura status salvos dos quartos */
+function _loadRoomStatuses() {
+  try {
+    return JSON.parse(localStorage.getItem(ROOM_STATUS_KEY) || '{}');
+  } catch (_) { return {}; }
+}
 
 function _withTimeout(promise, fallback = { data: null, error: null }) {
   return Promise.race([
@@ -142,7 +161,14 @@ function _mapClient(c) {
 }
 function _mapPayment(p) {
   if (!p) return null;
-  return { id: p.id, reservaId: p.reserva_id, valor: Number(p.valor), forma: p.forma, data: p.data };
+  return {
+    id: p.id,
+    reservaId: p.reserva_id,
+    valor: Number(p.valor) || 0,
+    forma: p.forma || 'outro',
+    // garante que data nunca seja null — evita TypeError em p.data.slice()
+    data: p.data || p.created_at || new Date().toISOString(),
+  };
 }
 function _mapConsumption(c) {
   if (!c) return null;
@@ -187,6 +213,13 @@ const DB = {
       { id: 'q108', numero: "108", andar: "1º andar", tipo: "casal", camas: "1 cama de casal", capacidade: 2, preco: 190, preco_1p: 190, preco_2p: 270, preco_3p: null, status: "disponivel", descricao: "Quarto com bela vista.", amenities: ["Wi-Fi", "Ar condicionado", "TV"] },
     ];
     _cache.rooms        = QUARTOS_FIXOS;
+
+    // Restaura status manuais (limpeza, manutencao, etc.) salvos no localStorage
+    const _savedStatuses = _loadRoomStatuses();
+    for (const r of _cache.rooms) {
+      if (_savedStatuses[r.id]) r.status = _savedStatuses[r.id];
+    }
+
     const sb = await _waitForSB();
 
     if (_cache.loaded) return;
@@ -389,8 +422,11 @@ const DB = {
     // Disabled
   },
   async setRoomStatus(id, status) {
-    const r = _cache.rooms.find(x => x.id === id); 
-    if (r) r.status = status;
+    const r = _cache.rooms.find(x => x.id === id);
+    if (r) {
+      r.status = status;
+      _saveRoomStatuses(); // persiste no localStorage para sobreviver ao reload
+    }
   },
 
   /* ===== Clientes ===== */
@@ -402,6 +438,7 @@ const DB = {
         ...c,
         id: c.id || _localId('client'),
         criadoEm: c.criadoEm || new Date().toISOString().slice(0, 10),
+        _savedLocallyOnly: true,
       };
       const idx = _cache.clients.findIndex(x => x.id === local.id);
       if (idx >= 0) _cache.clients[idx] = { ..._cache.clients[idx], ...local };
@@ -428,7 +465,7 @@ const DB = {
       _saveOfflineCache();
       return c;
     } catch (err) {
-      console.warn('Falha ao salvar cliente online. Salvando localmente.', err);
+      console.error('[DB.saveClient] Falha ao salvar no Supabase — salvando localmente. Erro:', err?.message || err);
       return saveLocal();
     }
   },
@@ -437,7 +474,7 @@ const DB = {
     if (c) return c;
 
     const saveLocal = () => {
-      const local = { id: _localId('client'), nome, cpf, telefone, email, observacoes: '', criadoEm: new Date().toISOString().slice(0, 10) };
+      const local = { id: _localId('client'), nome, cpf, telefone, email, observacoes: '', criadoEm: new Date().toISOString().slice(0, 10), _savedLocallyOnly: true };
       _cache.clients.push(local);
       _saveOfflineCache();
       return local;
@@ -456,7 +493,7 @@ const DB = {
       if (error || !data) throw error || new Error('client-insert-timeout');
       c = _mapClient(data); _cache.clients.push(c); _saveOfflineCache(); return c;
     } catch (err) {
-      console.warn('Falha ao buscar/criar cliente online. Salvando localmente.', err);
+      console.error('[DB.findOrCreateClient] Falha ao salvar no Supabase — salvando localmente. Erro:', err?.message || err);
       return saveLocal();
     }
   },
@@ -522,7 +559,7 @@ const DB = {
         await this.refreshRoomStatuses(); _saveOfflineCache(); return mapped;
       }
     } catch (err) {
-      console.warn('Falha ao salvar reserva online. Salvando localmente.', err);
+      console.error('[DB.saveReservation] Falha ao salvar no Supabase — salvando localmente. Erro:', err?.message || err);
       const saved = await saveLocal();
       saved._savedLocallyOnly = true; // sinaliza fallback para o chamador exibir aviso
       return saved;
@@ -651,6 +688,7 @@ const DB = {
       if (error) console.warn('checkIn: falha ao atualizar quarto', error);
     }
     const q = _cache.rooms.find(x => x.id === r.quartoId); if (q) q.status = 'ocupado';
+    _saveRoomStatuses();
     _saveOfflineCache();
   },
   async checkOut(id) {
@@ -672,25 +710,40 @@ const DB = {
       if (error) console.warn('checkOut: falha ao atualizar quarto', error);
     }
     const q = _cache.rooms.find(x => x.id === r.quartoId); if (q) q.status = 'limpeza';
+    _saveRoomStatuses();
     _saveOfflineCache();
   },
   async refreshRoomStatuses() {
     const today = new Date().toISOString().slice(0, 10);
+    let changed = false;
     for (const q of _cache.rooms) {
-      if (['limpeza','manutencao'].includes(q.status)) continue;
-      // Considera apenas reservas que cobrem a data de hoje (entrada <= hoje < saida).
-      // Reservas futuras NAO bloqueiam o quarto: ele segue "disponivel".
+      // Limpeza/manutencao definidas manualmente — só limpa se chegar uma reserva ativa
+      if (['limpeza','manutencao'].includes(q.status)) {
+        const ativa = _cache.reservations.find(r =>
+          r.quartoId === q.id &&
+          !['cancelada','finalizada'].includes(r.statusReserva) &&
+          r.entrada <= today && r.saida >= today
+        );
+        if (ativa) {
+          // Reserva começou — remove o status manual e deixa a lógica abaixo agir
+          q.status = 'disponivel';
+          changed = true;
+        } else {
+          continue; // mantém limpeza/manutencao enquanto não há reserva ativa
+        }
+      }
       const ativa = _cache.reservations.find(r => r.quartoId === q.id && !['cancelada','finalizada'].includes(r.statusReserva) && r.entrada <= today && r.saida >= today);
       const ns = ativa ? (ativa.statusReserva === 'em_hospedagem' ? 'ocupado' : 'reservado') : 'disponivel';
-      if (q.status !== ns) { q.status = ns; }
+      if (q.status !== ns) { q.status = ns; changed = true; }
     }
+    if (changed) _saveRoomStatuses(); // persiste mudanças automáticas
   },
 
   /* ===== Consumo ===== */
   consumptions(reservaId = null) { const a = _cache.consumptions; return reservaId ? a.filter(c => c.reservaId === reservaId) : a; },
   async addConsumption(c) {
     const saveLocal = () => {
-      const m = { ...c, id: c.id || _localId('consumption'), dataHora: c.dataHora || new Date().toISOString() };
+      const m = { ...c, id: c.id || _localId('consumption'), dataHora: c.dataHora || new Date().toISOString(), _savedLocallyOnly: true };
       _cache.consumptions.unshift(m);
       _saveOfflineCache();
       return m;
@@ -703,7 +756,7 @@ const DB = {
       if (error || !data) throw error || new Error('consumption-insert-timeout');
       const m = _mapConsumption(data); _cache.consumptions.unshift(m); _saveOfflineCache(); return m;
     } catch (err) {
-      console.warn('Falha ao salvar consumo online. Salvando localmente.', err);
+      console.error('[DB.addConsumption] Falha ao salvar no Supabase — salvando localmente. Erro:', err?.message || err);
       return saveLocal();
     }
   },
@@ -734,7 +787,7 @@ const DB = {
   },
   async addPayment(p) {
     const saveLocal = () => {
-      const m = { ...p, id: p.id || _localId('payment'), data: p.data || new Date().toISOString() };
+      const m = { ...p, id: p.id || _localId('payment'), data: p.data || new Date().toISOString(), _savedLocallyOnly: true };
       _cache.payments.unshift(m);
       const r = _cache.reservations.find(x => x.id === p.reservaId);
       if (r) {
@@ -773,7 +826,7 @@ const DB = {
       _saveOfflineCache();
       return m;
     } catch (err) {
-      console.warn('Falha ao salvar pagamento online. Salvando localmente.', err);
+      console.error('[DB.addPayment] Falha ao salvar no Supabase — salvando localmente. Erro:', err?.message || err);
       return saveLocal();
     }
   },

@@ -258,8 +258,8 @@ const App = {
     const monthStart = today.slice(0, 8) + '01';
     const reservasCanceladasIds = new Set(reservs.filter(r => r.statusReserva === 'cancelada').map(r => r.id));
     const pgsValidos = DB.payments().filter(p => !reservasCanceladasIds.has(p.reservaId));
-    const fatMes = pgsValidos.filter(p => p.data >= monthStart).reduce((s, p) => s + p.valor, 0);
-    const fatHoje = pgsValidos.filter(p => p.data.slice(0, 10) === today).reduce((s, p) => s + p.valor, 0);
+    const fatMes = pgsValidos.filter(p => p.data && p.data >= monthStart).reduce((s, p) => s + p.valor, 0);
+    const fatHoje = pgsValidos.filter(p => p.data?.slice(0, 10) === today).reduce((s, p) => s + p.valor, 0);
 
     const checkinsHoje = reservs.filter(r => r.entrada === today && r.statusReserva !== 'cancelada');
     const checkoutsHoje = reservs.filter(r => r.saida === today && r.statusReserva !== 'cancelada');
@@ -293,7 +293,7 @@ const App = {
         <div class="card-body tight">${this.renderReservaList(reservs.slice().sort((a,b) => (b.criadaEm||'').localeCompare(a.criadaEm||'')).slice(0, 6))}</div>
       </div>
     `;
-    this.render(html, `Olá, ${this.user.nome.split(' ')[0]} ✦`);
+    this.render(html, `Olá, ${(this.user.nome || this.user.email || 'Admin').split(' ')[0]} ✦`);
   },
 
   renderReservaList(list) {
@@ -1402,12 +1402,12 @@ const App = {
     if (!produto || qtd < 1 || vu <= 0) return this.toast('Preencha todos os campos.', 'error');
     const btn = this._lockBtn('⏳ Salvando...');
     try {
-      await DB.addConsumption({
+      const result = await DB.addConsumption({
         reservaId, produto, qtd, valorUnit: vu, valorTotal: qtd * vu,
         funcionarioId: this.user.id,
       });
-      this.toast('Consumo lançado!');
       this.closeModal();
+      this._checkLocalFallback(result, 'Consumo lançado!');
       if (this.view === 'consumo') this.view_consumo();
     } catch(e) {
       console.error(e);
@@ -1587,9 +1587,9 @@ const App = {
     if (!data.nome || !data.cpf) return this.toast('Nome e CPF obrigatórios.', 'error');
     const btn = this._lockBtn();
     try {
-      await DB.saveClient(data);
+      const result = await DB.saveClient(data);
       this.closeModal();
-      this.toast('Cliente salvo.');
+      this._checkLocalFallback(result, 'Cliente salvo!');
       this.view_clientes();
     } catch(e) {
       console.error(e);
@@ -1602,7 +1602,7 @@ const App = {
      PAGAMENTOS
      ============================================================ */
   view_pagamentos() {
-    const pgs = DB.payments().slice().sort((a,b) => b.data.localeCompare(a.data));
+    const pgs = DB.payments().slice().sort((a,b) => (b.data || '').localeCompare(a.data || ''));
     const pendentes = DB.reservations().filter(r => r.valorRestante > 0 && r.statusReserva !== 'cancelada');
     const totalPendente = pendentes.reduce((s,r) => s + r.valorRestante, 0);
 
@@ -1710,9 +1710,9 @@ const App = {
     if (valor > restante + 0.01 && !confirm(`O valor informado (${DB.formatBRL(valor)}) e maior que o restante (${DB.formatBRL(restante)}). Confirmar mesmo assim?`)) return;
     const btn = this._lockBtn();
     try {
-      await DB.addPayment({ reservaId, valor, forma });
-      this.toast('Pagamento lançado!');
+      const result = await DB.addPayment({ reservaId, valor, forma });
       this.closeModal();
+      this._checkLocalFallback(result, 'Pagamento lançado!');
       if (this.view === 'pagamentos') this.view_pagamentos();
       else if (this.view === 'reservas') this.view_reservas();
     } catch(e) {
@@ -1746,9 +1746,9 @@ const App = {
     const reservasCanceladasIds = new Set(reservs.filter(r => r.statusReserva === 'cancelada').map(r => r.id));
     const pgsValidos = pgs.filter(p => !reservasCanceladasIds.has(p.reservaId));
 
-    const fatHoje = pgsValidos.filter(p => p.data.slice(0,10) === today).reduce((s,p)=>s+p.valor,0);
-    const fatMes = pgsValidos.filter(p => p.data.slice(0,7) === month).reduce((s,p)=>s+p.valor,0);
-    const fatAno = pgsValidos.filter(p => p.data.slice(0,4) === year).reduce((s,p)=>s+p.valor,0);
+    const fatHoje = pgsValidos.filter(p => p.data?.slice(0,10) === today).reduce((s,p)=>s+p.valor,0);
+    const fatMes = pgsValidos.filter(p => p.data?.slice(0,7) === month).reduce((s,p)=>s+p.valor,0);
+    const fatAno = pgsValidos.filter(p => p.data?.slice(0,4) === year).reduce((s,p)=>s+p.valor,0);
 
     const confirmadas = reservs.filter(r => ['confirmada','em_hospedagem','finalizada'].includes(r.statusReserva)).length;
     const canceladas = reservs.filter(r => r.statusReserva === 'cancelada').length;
@@ -1763,7 +1763,7 @@ const App = {
     for (let i = 6; i >= 0; i--) {
       const d = new Date(); d.setDate(d.getDate() - i);
       const ds = d.toISOString().slice(0, 10);
-      last7.push({ data: ds, valor: pgsValidos.filter(p => p.data.slice(0,10) === ds).reduce((s,p)=>s+p.valor,0) });
+      last7.push({ data: ds, valor: pgsValidos.filter(p => p.data?.slice(0,10) === ds).reduce((s,p)=>s+p.valor,0) });
     }
     const max7 = Math.max(...last7.map(d => d.valor), 1);
 
@@ -1812,7 +1812,7 @@ const App = {
             <tbody>
               ${rooms.map(rm => {
                 const rsvDoMes = reservs.filter(r => r.quartoId === rm.id && (r.criadaEm||'').slice(0,7) === month);
-                const fat = pgsValidos.filter(p => rsvDoMes.find(r => r.id === p.reservaId) && p.data.slice(0,7) === month).reduce((s,p)=>s+p.valor,0);
+                const fat = pgsValidos.filter(p => rsvDoMes.find(r => r.id === p.reservaId) && p.data?.slice(0,7) === month).reduce((s,p)=>s+p.valor,0);
                 return `<tr>
                   <td><strong>${rm.numero}</strong></td>
                   <td>${rm.tipo}</td>
